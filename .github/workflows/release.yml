@@ -24,11 +24,6 @@ jobs:
         with:
           version: v3.8.1
 
-      - name: Override Git remote with PAT
-        run: |
-          git remote set-url origin https://x-access-token:${{ secrets.GH_PAT }}@github.com/ennva/helm-charts.git
-
-
       - name: Run chart-releaser
         uses: helm/chart-releaser-action@v1.4.0
         env:
