@@ -10,7 +10,8 @@ service:
 containerPort: 8000
 
 env:
-  DATABASE_ENGINE: django.db.backends.postgresql_psycopg2
+  DATABASE_SERVICE_NAME: POSTGRES_SQL
+  DATABASE_ENGINE: postgresql
   DATABASE_NAME: koku
   DATABASE_USER: koku
   DATABASE_PASSWORD: koku
