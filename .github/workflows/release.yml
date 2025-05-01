@@ -27,4 +27,7 @@ jobs:
       - name: Run chart-releaser
         uses: helm/chart-releaser-action@v1.4.0
         env:
-          CR_TOKEN: "${{ secrets.GH_PAT }}"
+          CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          #CR_TOKEN: "${{ secrets.GH_PAT }}" 
+        #run: |
+        #  git config --global url."https://${{ secrets.GH_PAT }}@github.com/".insteadOf "https://github.com/"
