@@ -1,6 +1,6 @@
 apiVersion: v2
 name: koku
-description: A Helm chart to deploy the Koku app from a custom Quay.io image
+description: A Helm chart for finops platform based on koku project
 
 # A chart can be either an 'application' or a 'library' chart.
 #
