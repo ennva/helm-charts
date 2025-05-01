@@ -1,3 +1,14 @@
 apiVersion: v1
-entries: {}
-generated: "2025-04-30T19:13:44.496106465+02:00"
+entries:
+  koku:
+  - apiVersion: v2
+    appVersion: 0.0.1
+    created: "2025-05-01T19:17:38.382023415Z"
+    description: A Helm chart to deploy the Koku app from a custom Quay.io image
+    digest: 4be0988479b3b568f9239a311b085dbdae210395e8fc7610f4f4caf77d17ea0f
+    name: koku
+    type: application
+    urls:
+    - https://github.com/ennva/helm-charts/releases/download/koku-0.0.1/koku-0.0.1.tgz
+    version: 0.0.1
+generated: "2025-05-01T19:17:38.382033624Z"
