@@ -1,0 +1,72 @@
+{{- if .Values.ingress.enabled -}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: koku-ingress
+  annotations:
+    # Add any Ingress controller specific annotations here
+    # For example, for Nginx Ingress Controller:
+    # nginx.ingress.kubernetes.io/rewrite-target: /$2
+    # nginx.ingress.kubernetes.io/proxy-body-size: 100m
+spec:
+  {{- if .Values.ingress.tls.enabled }}
+  tls:
+    - hosts:
+        {{- range .Values.ingress.tls.hosts }}
+        - {{ . }}
+        {{- end }}
+      secretName: {{ .Values.ingress.tls.secretName }}
+  {{- end }}
+  rules:
+    - host: {{ .Values.ingress.kokuServer.hostname }}
+      http:
+        paths:
+          - path: {{ .Values.ingress.kokuServer.path | default "/api/cost-management(/|$)(.*)" }}
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Release.Name }}-koku-server-service
+                port:
+                  number: {{ .Values.kokuServer.servicePort | default 8000 }}
+          - path: {{ .Values.ingress.kokuServerAdmin.path | default "/admin(/|$)(.*)" }}
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Release.Name }}-koku-server-service
+                port:
+                  number: {{ .Values.kokuServer.adminPort | default 9000 }}
+    - host: {{ .Values.ingress.masuServer.hostname }}
+      http:
+        paths:
+          - path: {{ .Values.ingress.masuServer.path | default "/api/cost-management(/|$)(.*)" }}
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Release.Name }}-masu-server-service
+                port:
+                  number: {{ .Values.masuServer.servicePort | default 5042 }}
+          - path: {{ .Values.ingress.masuServerAdmin.path | default "/admin(/|$)(.*)" }}
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Release.Name }}-masu-server-service
+                port:
+                  number: {{ .Values.masuServer.adminPort | default 5001 }}
+    - host: {{ .Values.ingress.sourcesClient.hostname }}
+      http:
+        paths:
+          - path: {{ .Values.ingress.sourcesClient.path | default "/sources(/|$)(.*)" }}
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Release.Name }}-sources-client-service
+                port:
+                  number: {{ .Values.sourcesClient.servicePort | default 4000 }}
+          - path: {{ .Values.ingress.sourcesClientAdmin.path | default "/sources-admin(/|$)(.*)" }}
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Release.Name }}-sources-client-service
+                port:
+                  number: {{ .Values.sourcesClient.adminPort | default 4001 }}
+{{- end }}                  

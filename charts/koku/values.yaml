@@ -1,48 +1,162 @@
-image:
-  repository: ghcr.io/ennva/koku
-  tag: 0.1.0
-  pullPolicy: IfNotPresent
+global:
+  imagePullPolicy: IfNotPresent
+  # Optional: Specify image pull secrets if needed
+  # imagePullSecrets:
+  #   - name: my-registry-secret
+  userId: 1000 # Replace with your desired user ID
+  groupId: 1000 # Replace with your desired group ID
 
-service:
-  type: ClusterIP
-  port: 80
 
-containerPort: 8000
 
-env:
-  DATABASE_SERVICE_NAME: POSTGRES_SQL
-  DATABASE_ENGINE: postgresql
-  DATABASE_NAME: koku
-  DATABASE_USER: koku
-  DATABASE_PASSWORD: koku
-  DATABASE_HOST: postgresql
-  DATABASE_PORT: "5432"
 
-resources:
-  limits:
-    cpu: 500m
-    memory: 512Mi
-  requests:
-    cpu: 250m
-    memory: 256Mi
-
-autoscaling:
+postgres:
   enabled: true
-  minReplicas: 1
-  maxReplicas: 5
-  targetCPUUtilizationPercentage: 80
+  image: ghcr.io/ennva/koku-db:0.0.1
+  replicas: 1
+  servicePort: 5432
+  database: koku
+  user: koku
+  existingSecret: "postgres-secret"  # The secret name you created with "kubectl create secret generic postgres-secret --from-literal=password=<your_password>"
+  passwordKey: "password" # The key within the secret that contains the password
+  storage: 10Gi
+
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 80
+
+redis:
+  enabled: true
+  image: redis:5.0.4
+  replicas: 1
+  servicePort: 6379
+  ingress:
+    enabled: false
+
+pushgateway:
+  enabled: true
+  image: prom/pushgateway
+  replicas: 1
+  servicePort: 9091
+  ingress:
+    enabled: false
+
+unleash:
+  enabled: true
+  image: unleashorg/unleash-server:5.8.2
+  replicas: 1
+  servicePort: 4242
+  adminToken: "*:*.dbffffc83b1f92eeaf133a7eb878d4c58231acc159b5e1478ce53cfc" # Replace with your desired admin token
+  clientToken: "*:development.dbffffc83b1f92eeaf133a7eb878d4c58231acc159b5e1478ce53cfc" # Replace with your desired client token
+  patToken: "user:6188b62f2f59348f3c195b66983147111682f4bb78a3f7ed9626bd84"
+  database: unleash
+  logLevel: INFO
+  flags: {}
+  # Example flags configuration:
+  # flags:
+  #   myFeature: true
+  #   anotherSetting: "enabled"
+  ingress:
+    enabled: false
+
+minio:
+  enabled: true
+  image: minio/minio:RELEASE.2025-01-20T14-49-07Z
+  mcImage: minio/mc:latest
+  replicas: 1
+  servicePort: 9000
+  consolePort: 9090
+  accessKey: "kokuminioaccess" # In production apply the as postgres
+  secretKey: "kokuminiosecret" # In production apply the as postgres
+  bucketName: "koku-bucket"
+  ingressBucketName: "ocp-ingress"
+  metastoreBucketName: "metastore"
+  storage: 20Gi
+  securityContext: {}
+  # Example custom security context:
+  # securityContext:
+  #   runAsUser: 1001
+  #   runAsGroup: 1001
+  #   fsGroup: 1001
+  ingress:
+    enabled: false
+
+parquet_bucket:
+  create:
+    enabled: true
+
+hive_metastore:
+  enabled: true
+  image: quay.io/redhat-services-prod/cost-mgmt-dev-tenant/ubi-hive:2f89bfb
+  replicas: 1
+  servicePort: 9083
+  config: |
+    <?xml version="1.0"?>
+    <?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+    <configuration>
+      </configuration>
 
 ingress:
-  enabled: false
-  className: ""
-  annotations: {}
-  hosts:
-    - host: koku.local
-      paths:
-        - path: /
-          pathType: Prefix
-  tls: []
+  enabled: true
+  tls:
+    enabled: false
+    hosts:
+      - koku.example.com
+      - masu.example.com
+      - sources.example.com
+    secretName: koku-tls-secret # Name of the Kubernetes Secret containing TLS certificate and key
+  kokuServer:
+    hostname: koku.example.com
+    path: "/api/cost-management"
+  kokuServerAdmin:
+    hostname: koku.example.com
+    path: "/admin"
+  masuServer:
+    hostname: masu.example.com
+    path: "/api/cost-management"
+  masuServerAdmin:
+    hostname: masu.example.com
+    path: "/admin"
+  sourcesClient:
+    hostname: sources.example.com
+    path: "/sources"
+  sourcesClientAdmin:
+    hostname: sources.example.com
+    path: "/sources-admin"
 
-serviceAccount:
-  create: true
-  name: ""
+route:
+  enabled: false # Set to true if deploying on OpenShift
+  tls:
+    enabled: false
+    termination: edge # Options: edge, passthrough, reencrypt
+    certificate: ""    # Your TLS certificate data
+    privateKey: ""     # Your TLS private key data
+    caCertificate: ""  # Optional: CA certificate
+    destinationCACertificate: "" # Required for reencrypt termination
+  kokuServer:
+    hostname: koku.apps.example.com # OpenShift route hostname
+    path: "/api/cost-management"
+  kokuServerAdmin:
+    hostname: koku-admin.apps.example.com # OpenShift route hostname
+    path: "/admin"
+  masuServer:
+    hostname: masu.apps.example.com # OpenShift route hostname
+    path: "/api/cost-management"
+  masuServerAdmin:
+    hostname: masu-admin.apps.example.com # OpenShift route hostname
+    path: "/admin"
+  sourcesClient:
+    hostname: sources.apps.example.com # OpenShift route hostname
+    path: "/sources"
+  sourcesClientAdmin:
+    hostname: sources-admin.apps.example.com # OpenShift route hostname
+    path: "/sources-admin"

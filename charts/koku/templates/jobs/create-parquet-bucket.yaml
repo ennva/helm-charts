@@ -1,0 +1,49 @@
+{{- if .Values.parquet_bucket.create.enabled -}}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Release.Name }}-create-parquet-bucket
+spec:
+  template:
+    spec:
+      restartPolicy: Never
+      {{- if .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- range .Values.global.imagePullSecrets }}
+        - name: {{ .name }}
+        {{- end }}
+      {{- end }}
+      containers:
+        - name: mc
+          image: {{ .Values.minio.mcImage }}
+          imagePullPolicy: {{ .Values.global.imagePullPolicy | default "IfNotPresent" }}
+          env:
+            - name: MINIO_ENDPOINT
+              value: "http://{{ .Release.Name }}-minio-service:{{ .Values.minio.servicePort | default 9000 }}"
+            - name: S3_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-minio-credentials
+                  key: accessKey
+            - name: S3_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-minio-credentials
+                  key: secretKey
+          command:
+            - /bin/sh
+            - -c
+            - |
+              /usr/bin/mc config host rm local;
+              /usr/bin/mc config host add --quiet --api s3v4 local $MINIO_ENDPOINT $S3_ACCESS_KEY $S3_SECRET;
+              /usr/bin/mc rb --force local/{{ .Values.minio.bucketName }}/;
+              /usr/bin/mc mb --quiet local/{{ .Values.minio.bucketName }}/;
+              /usr/bin/mc anonymous set public local/{{ .Values.minio.bucketName }};
+              /usr/bin/mc rb --force local/{{ .Values.minio.ingressBucketName }}/;
+              /usr/bin/mc mb --quiet local/{{ .Values.minio.ingressBucketName }}/;
+              /usr/bin/mc anonymous set public local/{{ .Values.minio.ingressBucketName }};
+              /usr/bin/mc rb --force local/{{ .Values.minio.metastoreBucketName }}/;
+              /usr/bin/mc mb --quiet local/{{ .Values.minio.metastoreBucketName }}/;
+              /usr/bin/mc anonymous set public local/{{ .Values.minio.metastoreBucketName }};
+  backoffLimit: 4
+{{- end }}

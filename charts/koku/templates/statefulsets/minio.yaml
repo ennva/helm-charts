@@ -1,0 +1,71 @@
+{{- if .Values.minio.enabled -}}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Release.Name }}-minio
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-minio
+  serviceName: {{ .Release.Name }}-minio-service
+  replicas: {{ .Values.minio.replicas | default 1 }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-minio
+    spec:
+      {{- if .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- range .Values.global.imagePullSecrets }}
+        - name: {{ .name }}
+        {{- end }}
+      {{- end }}
+      securityContext:
+        {{- if .Values.minio.securityContext }}
+        {{- toYaml .Values.minio.securityContext | nindent 8 }}
+        {{- else }}
+        runAsUser: {{ .Values.global.userId }}
+        runAsGroup: {{ .Values.global.groupId }}
+        fsGroup: {{ .Values.global.groupId }}
+        {{- end }}
+      containers:
+        - name: minio
+          image: {{ .Values.minio.image }}
+          imagePullPolicy: {{ .Values.global.imagePullPolicy | default "IfNotPresent" }}
+          ports:
+            - containerPort: 9000
+            - containerPort: 9090
+          env:
+            - name: MINIO_ROOT_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-minio-root-credentials
+                  key: username
+            - name: MINIO_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-minio-root-credentials
+                  key: password
+            - name: MINIO_USERNAME
+              value: {{ .Values.minio.user | default "kminio" }}
+            - name: MINIO_GROUPNAME
+              value: {{ .Values.minio.group | default "kminio" }}
+          command: ["server", "/data", "--console-address", ":9090"]
+          volumeMounts:
+            - name: minio-data
+              mountPath: /data
+          readinessProbe:
+            httpGet:
+              path: /minio/health/live
+              port: 9000
+            initialDelaySeconds: 5
+            periodSeconds: 2
+  volumeClaimTemplates:
+    - metadata:
+        name: minio-data
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        resources:
+          requests:
+            storage: {{ .Values.minio.storage | default "20Gi" }}
+{{- end }}            

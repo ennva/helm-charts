@@ -1,0 +1,67 @@
+{{- if .Values.unleash.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-unleash
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-unleash
+  replicas: {{ .Values.unleash.replicas | default 1 }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-unleash
+    spec:
+      {{- if .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- range .Values.global.imagePullSecrets }}
+        - name: {{ .name }}
+        {{- end }}
+      {{- end }}
+      containers:
+        - name: unleash
+          image: {{ .Values.unleash.image }}
+          imagePullPolicy: {{ .Values.global.imagePullPolicy | default "IfNotPresent" }}
+          ports:
+            - containerPort: 4242
+          env:
+            - name: INIT_ADMIN_API_TOKENS
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-unleash-secrets
+                  key: adminToken
+            - name: INIT_CLIENT_API_TOKENS
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-unleash-secrets
+                  key: clientToken
+            - name: CHECK_VERSION
+              value: "false"
+            - name: DATABASE_HOST
+              value: "{{ .Release.Name }}-postgres-service"
+            - name: DATABASE_NAME
+              value: {{ .Values.unleash.database | default "unleash" }}
+            - name: DATABASE_USERNAME
+              value: {{ .Values.postgres.user | default "postgres" }}
+            - name: DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-postgres-secrets
+                  key: password
+            - name: DATABASE_SSL
+              value: "false"
+            - name: IMPORT_DROP_BEFORE_IMPORT
+              value: "true"
+            - name: IMPORT_FILE
+              value: "/unleash-data/flags.json"
+            - name: LOG_LEVEL
+              value: {{ .Values.unleash.logLevel | default "INFO" }}
+          volumeMounts:
+            - name: unleash-config
+              mountPath: "/unleash-data"
+      volumes:
+        - name: unleash-config
+          configMap:
+            name: {{ .Release.Name }}-unleash-config
+{{- end }}

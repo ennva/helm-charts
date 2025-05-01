@@ -1,0 +1,13 @@
+{{- if .Values.unleash.enabled -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-unleash-service
+spec:
+  selector:
+    app: {{ .Release.Name }}-unleash
+  ports:
+    - protocol: TCP
+      port: {{ .Values.unleash.servicePort | default 4242 }}
+      targetPort: 4242
+{{- end }}

@@ -1,0 +1,14 @@
+{{- if .Values.hive_metastore.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-hive-metastore
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-hive-metastore
+  replicas: {{ .Values.hiveMetastore.replicas | default 1 }}
+  template:
+    metadata:
+      labels:
+{{- end }}
