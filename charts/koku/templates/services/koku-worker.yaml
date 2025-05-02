@@ -1,0 +1,20 @@
+{{- if .Values.kokuWorker.ports }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-koku-worker-svc
+  labels:
+    app.kubernetes.io/name: koku-worker
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  selector:
+    app.kubernetes.io/name: koku-worker
+    app.kubernetes.io/instance: {{ .Release.Name }}
+  ports:
+    {{- range .Values.kokuWorker.ports }}
+    - name: http-{{ .containerPort | replace "." "-" }} # Sanitize port names
+      protocol: TCP
+      port: {{ .containerPort }}
+      targetPort: {{ .containerPort }}
+    {{- end }}
+{{- end }}

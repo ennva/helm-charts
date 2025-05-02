@@ -1,0 +1,48 @@
+{{- if .Values.subsWorker.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-subs-worker
+  labels:
+    app.kubernetes.io/name: subs-worker
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  replicas: 1 # You might want to scale this based on workload
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: subs-worker
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: subs-worker
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      containers:
+        - name: subs-worker
+          image: {{ .Values.subsWorker.image }}
+          workingDir: {{ .Values.subsWorker.workingDir }}
+          entrypoint: {{ .Values.subsWorker.entrypoint }}
+          ports:
+            {{- range .Values.subsWorker.ports }}
+            - containerPort: {{ .containerPort }}
+            {{- end }}
+          env:
+            {{- range $key, $value := .Values.subsWorker.environment }}
+            - name: {{ $key }}
+              value: {{ quote $value }}
+            {{- end }}
+          volumeMounts:
+            {{- range .Values.subsWorker.volumes }}
+            - name: {{ .name }}
+              mountPath: {{ .mountPath }}
+              {{- if .subPath }}
+              subPath: {{ .subPath }}
+              {{- end }}
+            {{- end }}
+      volumes:
+        {{- range .Values.subsWorker.volumes }}
+        - name: {{ .name }}
+          emptyDir: {} # You'll need to configure the actual volume source
+        {{- end }}
+{{- end }}        

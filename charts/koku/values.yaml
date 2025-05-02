@@ -6,8 +6,604 @@ global:
   userId: 1000 # Replace with your desired user ID
   groupId: 1000 # Replace with your desired group ID
 
+kokuBase:
+  image: "ghcr.io/ennva/koku/koku-base:0.0.1" 
 
+kokuServer:
+  enabled: true
+  image: "ghcr.io/ennva/koku/koku-base:0.0.1"
+  containerName: koku-server
+  workingDir: /koku
+  entrypoint:
+    - /koku/run_server.sh
+  environment:
+    DATABASE_SERVICE_NAME: POSTGRES_SQL
+    DATABASE_ENGINE: postgresql
+    DATABASE_NAME: postgres
+    POSTGRES_SQL_SERVICE_HOST: db
+    POSTGRES_SQL_SERVICE_PORT: 5432
+    DATABASE_USER: postgres
+    DATABASE_PASSWORD: postgres
+    KOKU_SOURCES_CLIENT_HOST: sources-client
+    KOKU_SOURCES_CLIENT_PORT: 9000
+    DJANGO_READ_DOT_ENV_FILE: "True"
+    DEVELOPMENT: "True"
+    SCHEMA_SUFFIX: ""
+    TRINO_S3A_OR_S3: s3a
+    RBAC_SERVICE_HOST: rbac-server
+    RBAC_SERVICE_PORT: 9000
+    RBAC_SERVICE_PATH: /r/insights/platform/rbac/v1/access/
+    REDIS_HOST: redis
+    REDIS_PORT: 6379
+    RBAC_CACHE_TTL: ""
+    PROMETHEUS_MULTIPROC_DIR: /tmp
+    API_PATH_PREFIX: /api/cost-management
+    MAX_GROUP_BY_OVERRIDE: "3"
+    AWS_SHARED_CREDENTIALS_FILE: ""
+    GOOGLE_APPLICATION_CREDENTIALS: ""
+    OCI_SHARED_CREDENTIALS_FILE: ""
+    OCI_CLI_KEY_FILE: ""
+    OCI_PYTHON_SDK_NO_SERVICE_IMPORTS: "True"
+    DEMO_ACCOUNTS: ""
+    ACCOUNT_ENHANCED_METRICS: "False"
+    RUN_GUNICORN: ""
+    POD_CPU_LIMIT: "1"
+    GUNICORN_WORKERS: "3"
+    GUNICORN_THREADS: "False"
+    RETAIN_NUM_MONTHS: "4"
+    NOTIFICATION_CHECK_TIME: "24"
+    UNLEASH_HOST: unleash
+    UNLEASH_PREFIX: http
+    UNLEASH_PORT: "4242"
+    UNLEASH_TOKEN: "" # Required
+    UNLEASH_LOG_LEVEL: WARNING
+    QE_SCHEMA: ""
+    ENHANCED_ORG_ADMIN: "True"
+    TAG_ENABLED_LIMIT: "200"
+    DELAYED_TASK_TIME: "20"
+    DELAYED_TASK_POLLING_MINUTES: "5"
+  ports:
+    - containerPort: 8000
+    - containerPort: 9000
+  volumes:
+    - name: koku-code
+      mountPath: /koku/koku
+    - name: unleash-config
+      mountPath: /koku/.unleash
+    - name: db-functions
+      mountPath: /koku/db_functions
+    - name: scripts
+      mountPath: /koku/scripts
+    - name: run-server-script
+      mountPath: /koku/run_server.sh
+      subPath: run_server.sh
+    - name: credentials
+      mountPath: /etc/credentials
 
+masuServer:
+  enabled: true
+  image: "ghcr.io/ennva/koku/koku-base:0.0.1"
+  containerName: masu-server
+  workingDir: /koku
+  entrypoint:
+    - /koku/run_server.sh
+  environment:
+    MASU: "True"
+    DATABASE_SERVICE_NAME: POSTGRES_SQL
+    DATABASE_ENGINE: postgresql
+    DATABASE_NAME: postgres
+    POSTGRES_SQL_SERVICE_HOST: db
+    POSTGRES_SQL_SERVICE_PORT: 5432
+    DATABASE_USER: postgres
+    DATABASE_PASSWORD: postgres
+    S3_BUCKET_NAME_OCP_INGRESS: ocp-ingress
+    S3_BUCKET_NAME: koku-bucket
+    S3_ENDPOINT: http://koku-minio:9000
+    S3_ACCESS_KEY: ""
+    S3_SECRET: ""
+    DJANGO_READ_DOT_ENV_FILE: "True"
+    DEVELOPMENT: "True"
+    SCHEMA_SUFFIX: ""
+    TRINO_S3A_OR_S3: s3a
+    RBAC_SERVICE_HOST: rbac-server
+    RBAC_SERVICE_PORT: 9000
+    RBAC_SERVICE_PATH: /r/insights/platform/rbac/v1/access/
+    REDIS_HOST: redis
+    REDIS_PORT: 6379
+    RBAC_CACHE_TTL: ""
+    PROMETHEUS_MULTIPROC_DIR: /tmp
+    API_PATH_PREFIX: /api/cost-management
+    ACCOUNT_ENHANCED_METRICS: "False"
+    SOURCES_API_SVC_HOST: sources
+    SOURCES_API_SVC_PORT: "3000"
+    SOURCES_API_PREFIX: /api/sources/v1.0
+    SOURCES_PSK: thisMustBeEphemeralOrMinikube
+    MASU_DATE_OVERRIDE: ""
+    RUN_GUNICORN: ""
+    POD_CPU_LIMIT: "1"
+    GUNICORN_WORKERS: "3"
+    GUNICORN_THREADS: "False"
+    RETAIN_NUM_MONTHS: "4"
+    NOTIFICATION_CHECK_TIME: "24"
+    UNLEASH_HOST: unleash
+    UNLEASH_PREFIX: http
+    UNLEASH_PORT: "4242"
+    UNLEASH_TOKEN: "" # Required
+    UNLEASH_LOG_LEVEL: WARNING
+    AWS_SHARED_CREDENTIALS_FILE: ""
+    GOOGLE_APPLICATION_CREDENTIALS: ""
+    OCI_SHARED_CREDENTIALS_FILE: ""
+    OCI_CLI_KEY_FILE: ""
+    OCI_PYTHON_SDK_NO_SERVICE_IMPORTS: "True"
+    ENHANCED_ORG_ADMIN: "True"
+    TRINO_HOST: trino
+    TRINO_PORT: "8080"
+    TAG_ENABLED_LIMIT: "200"
+  ports:
+    - containerPort: 8000
+    - containerPort: 9000
+  volumes:
+    - name: koku-code
+      mountPath: /koku/koku
+    - name: unleash-config
+      mountPath: /koku/.unleash
+    - name: db-functions
+      mountPath: /koku/db_functions
+    - name: scripts
+      mountPath: /koku/scripts
+    - name: run-server-script
+      mountPath: /koku/run_server.sh
+      subPath: run_server.sh
+    - name: credentials
+      mountPath: /etc/credentials
+
+kokuWorker:
+  enabled: true
+  image: "ghcr.io/ennva/koku/koku-base:0.0.1"
+  hostname: koku-worker-1
+  workingDir: /koku/koku
+  entrypoint:
+    - python
+    - manage.py
+    - restart_celery
+  environment:
+    DATABASE_SERVICE_NAME: POSTGRES_SQL
+    DATABASE_ENGINE: postgresql
+    DATABASE_NAME: postgres
+    POSTGRES_SQL_SERVICE_HOST: db
+    POSTGRES_SQL_SERVICE_PORT: 5432
+    DATABASE_USER: postgres
+    DATABASE_PASSWORD: postgres
+    REDIS_HOST: redis
+    REDIS_PORT: 6379
+    DEBUG_ATTACH: "False"
+    DEVELOPMENT: "True"
+    SCHEMA_SUFFIX: ""
+    TRINO_S3A_OR_S3: s3a
+    KOKU_LOG_LEVEL: DEBUG
+    CELERY_LOG_LEVEL: INFO
+    DJANGO_LOG_LEVEL: INFO
+    UNLEASH_LOG_LEVEL: WARNING
+    DJANGO_SETTINGS_MODULE: koku.settings
+    PROMETHEUS_MULTIPROC_DIR: /tmp
+    PROMETHEUS_PUSHGATEWAY: pushgateway:9091
+    ENABLE_HCS_DEBUG: "False"
+    ENABLE_SUBS_DEBUG: "False"
+    ENABLE_SUBS_PROVIDER_TYPES: ""
+    ENABLE_ROS_DEBUG: "False"
+    S3_BUCKET_NAME: koku-bucket
+    S3_ENDPOINT: http://koku-minio:9000
+    S3_ACCESS_KEY: ""
+    S3_SECRET: ""
+    DATA_DIR: /testing/data
+    AWS_SHARED_CREDENTIALS_FILE: ""
+    GOOGLE_APPLICATION_CREDENTIALS: ""
+    OCI_SHARED_CREDENTIALS_FILE: ""
+    OCI_CLI_KEY_FILE: ""
+    OCI_PYTHON_SDK_NO_SERVICE_IMPORTS: "True"
+    DEMO_ACCOUNTS: ""
+    INITIAL_INGEST_OVERRIDE: "False"
+    INITIAL_INGEST_NUM_MONTHS: "2"
+    POLLING_TIMER: "60"
+    POLLING_COUNT: "21"
+    XL_REPORT_COUNT: "100"
+    PROCESSING_WAIT_TIMER: "3"
+    LARGE_PROCESSING_WAIT_TIMER: "7"
+    DELAYED_TASK_TIME: "20"
+    DELAYED_TASK_POLLING_MINUTES: "5"
+    TAG_ENABLED_LIMIT: "200"
+    AUTO_DATA_INGEST: "True"
+    REPORT_PROCESSING_BATCH_SIZE: "100000"
+    TRINO_HOST: trino
+    TRINO_PORT: "8080"
+    SOURCES_API_HOST: sources-server
+    SOURCES_API_PORT: "3000"
+    DATE_OVERRIDE: ""
+    TRINO_DATE_STEP: "31"
+    VALIDATION_RANGE: "5"
+    MAX_CELERY_TASKS_PER_WORKER: "10"
+    RETAIN_NUM_MONTHS: "4"
+    NOTIFICATION_CHECK_TIME: "24"
+    UNLEASH_HOST: unleash
+    UNLEASH_PREFIX: http
+    UNLEASH_PORT: "4242"
+    UNLEASH_TOKEN: "" # Required
+    ENHANCED_ORG_ADMIN: "True"
+  ports:
+    - containerPort: 9000
+      name: debug-port-range-1
+    - containerPort: 9000
+      name: debug-port-range-2
+    - containerPort: 9000
+      name: debug-port-range-3
+    - containerPort: 9000
+      name: debug-port-range-4
+    - containerPort: 9000
+      name: debug-port-range-5
+    - containerPort: 9000
+      name: debug-port-range-6
+    - containerPort: 9000
+      name: debug-port-range-7
+    - containerPort: 9000
+      name: debug-port-range-8
+    - containerPort: 9000
+      name: debug-port-range-9
+    - containerPort: 9000
+      name: debug-port-range-10
+    - containerPort: 9000
+      name: debug-port-range-11
+    - containerPort: 9000
+      name: debug-port-range-12
+    - containerPort: 9000
+      name: debug-port-range-13
+    - containerPort: 9000
+      name: debug-port-range-14
+    - containerPort: 9000
+      name: debug-port-range-15
+    - containerPort: 9000
+      name: debug-port-range-16
+    - containerPort: 9000
+      name: debug-port-range-17
+    - containerPort: 9000
+      name: debug-port-range-18
+    - containerPort: 9000
+      name: debug-port-range-19
+    - containerPort: 9000
+      name: debug-port-range-20
+    - containerPort: 5678
+  volumes:
+    - name: koku-code
+      mountPath: /koku/koku
+    - name: unleash-config
+      mountPath: /koku/.unleash
+    - name: db-functions
+      mountPath: /koku/db_functions
+    - name: scripts
+      mountPath: /koku/scripts
+    - name: testing
+      mountPath: /testing
+    - name: azure-local
+      mountPath: /tmp/local_container
+    - name: oci-local
+      mountPath: /tmp/oci_local
+    - name: aws-local-0
+      mountPath: /tmp/local_bucket
+    - name: aws-local-1
+      mountPath: /tmp/local_bucket_0
+    - name: aws-local-2
+      mountPath: /tmp/local_bucket_1
+    - name: aws-local-3
+      mountPath: /tmp/local_bucket_2
+    - name: aws-local-4
+      mountPath: /tmp/local_bucket_3
+    - name: aws-local-5
+      mountPath: /tmp/local_bucket_4
+    - name: aws-local-6
+      mountPath: /tmp/local_bucket_5
+    - name: insights-local
+      mountPath: /var/tmp/masu/insights_local
+    - name: gcp-local-0
+      mountPath: /tmp/gcp_local_bucket
+    - name: gcp-local-1
+      mountPath: /tmp/gcp_local_bucket_0
+    - name: gcp-local-2
+      mountPath: /tmp/gcp_local_bucket_1
+    - name: gcp-local-3
+      mountPath: /tmp/gcp_local_bucket_2
+    - name: gcp-local-4
+      mountPath: /tmp/gcp_local_bucket_3
+    - name: credentials
+      mountPath: /etc/credentials
+
+kokuListener:
+  enabled: true
+  image: "ghcr.io/ennva/koku/koku-base:0.0.1"
+  containerName: koku-listener
+  workingDir: /koku/
+  entrypoint:
+    - watchmedo
+    - auto-restart
+    - "--directory=./koku"
+    - "--pattern=*.py"
+    - "--ignore-patterns=*test*"
+    - "--recursive"
+    - "--"
+    - python
+    - koku/manage.py
+    - listener
+  environment:
+    DJANGO_READ_DOT_ENV_FILE: "True"
+    DATABASE_SERVICE_NAME: POSTGRES_SQL
+    POSTGRES_SQL_SERVICE_HOST: db
+    POSTGRES_SQL_SERVICE_PORT: 5432
+    DATABASE_ENGINE: postgresql
+    DATABASE_NAME: postgres
+    DATABASE_HOST: db
+    DATABASE_PORT: 5432
+    DATABASE_USER: postgres
+    DATABASE_PASSWORD: postgres
+    REDIS_HOST: redis
+    REDIS_PORT: "6379"
+    INSIGHTS_KAFKA_HOST: kafka
+    INSIGHTS_KAFKA_PORT: "29092"
+    KAFKA_CONNECT: "True"
+    PROMETHEUS_MULTIPROC_DIR: /tmp
+    MASU_DATE_OVERRIDE: ""
+    KOKU_LOG_LEVEL: INFO
+    DJANGO_LOG_LEVEL: INFO
+    UNLEASH_LOG_LEVEL: WARNING
+    INITIAL_INGEST_NUM_MONTHS: "1"
+    PYTHONPATH: /koku/koku
+    S3_BUCKET_NAME: koku-bucket
+    S3_ENDPOINT: http://koku-minio:9000
+    S3_ACCESS_KEY: ""
+    S3_SECRET: ""
+    TRINO_HOST: trino
+    TRINO_PORT: "8080"
+    UNLEASH_HOST: unleash
+    UNLEASH_PREFIX: http
+    UNLEASH_PORT: "4242"
+    UNLEASH_TOKEN: "" # Required
+    ENHANCED_ORG_ADMIN: "True"
+  ports:
+    - containerPort: 9000
+      name: listener-port-range-1
+    - containerPort: 9000
+      name: listener-port-range-2
+    - containerPort: 9000
+      name: listener-port-range-3
+    - containerPort: 9000
+      name: listener-port-range-4
+    - containerPort: 9000
+      name: listener-port-range-5
+    - containerPort: 9000
+      name: listener-port-range-6
+    - containerPort: 9000
+      name: listener-port-range-7
+    - containerPort: 9000
+      name: listener-port-range-8
+    - containerPort: 9000
+      name: listener-port-range-9
+    - containerPort: 9000
+      name: listener-port-range-10
+    - containerPort: 9000
+      name: listener-port-range-11
+    - containerPort: 9000
+      name: listener-port-range-12
+    - containerPort: 9000
+      name: listener-port-range-13
+    - containerPort: 9000
+      name: listener-port-range-14
+    - containerPort: 9000
+      name: listener-port-range-15
+    - containerPort: 9000
+      name: listener-port-range-16
+    - containerPort: 9000
+      name: listener-port-range-17
+    - containerPort: 9000
+      name: listener-port-range-18
+    - containerPort: 9000
+      name: listener-port-range-19
+    - containerPort: 9000
+      name: listener-port-range-20
+  volumes:
+    - name: koku-code
+      mountPath: /koku/koku
+    - name: unleash-config
+      mountPath: /koku/.unleash
+    - name: db-functions
+      mountPath: /koku/db_functions
+    - name: scripts
+      mountPath: /koku/scripts
+
+subsWorker:
+  enabled: true
+  image: "ghcr.io/ennva/koku/koku-base:0.0.1"
+  containerName: subs-worker
+  workingDir: /koku/koku
+  entrypoint:
+    - watchmedo
+    - auto-restart
+    - "--directory=./"
+    - "--pattern=*.py"
+    - "--ignore-patterns=*test*"
+    - "--recursive"
+    - "--"
+    - celery
+    - "-A"
+    - "koku"
+    - "worker"
+    - "--without-gossip"
+    - "-l"
+    - "info"
+    - "-Q"
+    - "subs_extraction,subs_transmission"
+  environment:
+    DJANGO_READ_DOT_ENV_FILE: "True"
+    DATABASE_SERVICE_NAME: POSTGRES_SQL
+    DATABASE_ENGINE: postgresql
+    DATABASE_NAME: postgres
+    POSTGRES_SQL_SERVICE_HOST: db
+    POSTGRES_SQL_SERVICE_PORT: 5432
+    DATABASE_USER: postgres
+    DATABASE_PASSWORD: postgres
+    KOKU_API_HOST: koku-server
+    KOKU_API_PORT: "8000"
+    KOKU_API_PATH_PREFIX: /api/cost-management/v1
+    ENABLE_SUBS_DEBUG: "False"
+    ENABLE_SUBS_PROVIDER_TYPES: ""
+    S3_BUCKET_NAME: koku-bucket
+    S3_ENDPOINT: http://koku-minio:9000
+    S3_ACCESS_KEY: ""
+    S3_SECRET: ""
+    AWS_SHARED_CREDENTIALS_FILE: ""
+    REDIS_HOST: redis
+    REDIS_PORT: "6379"
+    INSIGHTS_KAFKA_HOST: kafka
+    INSIGHTS_KAFKA_PORT: "29092"
+    PROMETHEUS_MULTIPROC_DIR: /tmp
+    KOKU_LOG_LEVEL: DEBUG
+    DJANGO_LOG_LEVEL: INFO
+    UNLEASH_LOG_LEVEL: WARNING
+    AUTO_DATA_INGEST: "True"
+    RUN_GUNICORN: ""
+    POD_CPU_LIMIT: "1"
+    GUNICORN_WORKERS: "3"
+    GUNICORN_THREADS: "False"
+    UNLEASH_HOST: unleash
+    UNLEASH_PREFIX: http
+    UNLEASH_PORT: "4242"
+    UNLEASH_TOKEN: "" # Required
+    ENHANCED_ORG_ADMIN: "True"
+  ports:
+    - containerPort: 9000
+  volumes:
+    - name: koku-code
+      mountPath: /koku/koku
+    - name: unleash-config
+      mountPath: /koku/.unleash
+    - name: db-functions
+      mountPath: /koku/db_functions
+    - name: scripts
+      mountPath: /koku/scripts
+    - name: credentials
+      mountPath: /etc/credentials
+
+sourcesClient:
+  image: "ghcr.io/ennva/koku/koku-base:0.0.1"
+  containerName: sources_client
+  workingDir: /koku/
+  entrypoint:
+    - watchmedo
+    - auto-restart
+    - "--directory=./koku"
+    - "--pattern=*.py"
+    - "--ignore-patterns=*test*"
+    - "--recursive"
+    - "--"
+    - python
+    - koku/manage.py
+    - sources
+  environment:
+    DJANGO_READ_DOT_ENV_FILE: "True"
+    SOURCES: "True"
+    DATABASE_SERVICE_NAME: POSTGRES_SQL
+    DATABASE_ENGINE: postgresql
+    DATABASE_NAME: postgres
+    POSTGRES_SQL_SERVICE_HOST: db
+    POSTGRES_SQL_SERVICE_PORT: 5432
+    DATABASE_USER: postgres
+    DATABASE_PASSWORD: postgres
+    KOKU_API_HOST: koku-server
+    KOKU_API_PORT: "8000"
+    KOKU_API_PATH_PREFIX: /api/cost-management/v1
+    SOURCES_API_SVC_HOST: sources-server
+    SOURCES_API_SVC_PORT: "3000"
+    REDIS_HOST: redis
+    REDIS_PORT: "6379"
+    INSIGHTS_KAFKA_HOST: kafka
+    INSIGHTS_KAFKA_PORT: "29092"
+    KOKU_SOURCES_CLIENT_PORT: "9000"
+    AWS_SHARED_CREDENTIALS_FILE: ""
+    GOOGLE_APPLICATION_CREDENTIALS: ""
+    OCI_SHARED_CREDENTIALS_FILE: ""
+    OCI_CLI_KEY_FILE: ""
+    OCI_PYTHON_SDK_NO_SERVICE_IMPORTS: "True"
+    DEMO_ACCOUNTS: ""
+    PROMETHEUS_MULTIPROC_DIR: /tmp
+    KOKU_LOG_LEVEL: DEBUG
+    DJANGO_LOG_LEVEL: INFO
+    UNLEASH_LOG_LEVEL: WARNING
+    SOURCES_API_PREFIX: /api/sources/v1.0
+    SOURCES_PSK: thisMustBeEphemeralOrMinikube
+    AUTO_DATA_INGEST: "True"
+    RUN_GUNICORN: ""
+    POD_CPU_LIMIT: "1"
+    GUNICORN_WORKERS: "3"
+    GUNICORN_THREADS: "False"
+    UNLEASH_HOST: unleash
+    UNLEASH_PREFIX: http
+    UNLEASH_PORT: "4242"
+    UNLEASH_TOKEN: "" # Required
+    ENHANCED_ORG_ADMIN: "True"
+  ports:
+    - containerPort: 8000
+    - containerPort: 9000
+  volumes:
+    - name: koku-code
+      mountPath: /koku/koku
+    - name: unleash-config
+      mountPath: /koku/.unleash
+    - name: db-functions
+      mountPath: /koku/db_functions
+    - name: scripts
+      mountPath: /koku/scripts
+    - name: credentials
+      mountPath: /etc/credentials
+
+kokuBeat:
+  enabled: true
+  image: "your-registry/koku-base:latest" # Replace with your actual base image
+  containerName: koku_beat
+  hostname: koku-beat
+  workingDir: /koku/koku
+  entrypoint:
+    - celery
+    - "-A"
+    - "koku"
+    - "beat"
+    - "-l"
+    - "info"
+  environment:
+    DATABASE_SERVICE_NAME: POSTGRES_SQL
+    DATABASE_ENGINE: postgresql
+    DATABASE_NAME: postgres
+    POSTGRES_SQL_SERVICE_HOST: db
+    POSTGRES_SQL_SERVICE_PORT: 5432
+    DATABASE_USER: postgres
+    DATABASE_PASSWORD: postgres
+    REDIS_HOST: redis
+    REDIS_PORT: "6379"
+    LOG_LEVEL: INFO
+    DJANGO_SETTINGS_MODULE: koku.settings
+    PROMETHEUS_MULTIPROC_DIR: /tmp
+    SCHEDULE_REPORT_CHECKS: "True"
+    SOURCE_STATUS_SCHEDULE: ""
+    UPLOAD_NORMALIZED_DATA_INTERVAL: "10000000"
+    UNLEASH_HOST: unleash
+    UNLEASH_PREFIX: http
+    UNLEASH_PORT: "4242"
+    UNLEASH_TOKEN: "" # Required
+    ENHANCED_ORG_ADMIN: "True"
+  volumes:
+    - name: koku-code
+      mountPath: /koku/koku
+    - name: unleash-config
+      mountPath: /koku/.unleash
+    - name: db-functions
+      mountPath: /koku/db_functions
+    - name: scripts
+      mountPath: /koku/scripts
 
 postgres:
   enabled: true

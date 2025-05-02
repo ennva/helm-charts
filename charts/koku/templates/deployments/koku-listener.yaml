@@ -1,0 +1,48 @@
+{{- if .Values.kokuListener.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-koku-listener
+  labels:
+    app.kubernetes.io/name: koku-listener
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  replicas: 1 # Likely only need one listener
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: koku-listener
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: koku-listener
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      containers:
+        - name: koku-listener
+          image: {{ .Values.kokuListener.image }}
+          workingDir: {{ .Values.kokuListener.workingDir }}
+          entrypoint: {{ .Values.kokuListener.entrypoint }}
+          ports:
+            {{- range .Values.kokuListener.ports }}
+            - containerPort: {{ .containerPort }}
+            {{- end }}
+          env:
+            {{- range $key, $value := .Values.kokuListener.environment }}
+            - name: {{ $key }}
+              value: {{ quote $value }}
+            {{- end }}
+          volumeMounts:
+            {{- range .Values.kokuListener.volumes }}
+            - name: {{ .name }}
+              mountPath: {{ .mountPath }}
+              {{- if .subPath }}
+              subPath: {{ .subPath }}
+              {{- end }}
+            {{- end }}
+      volumes:
+        {{- range .Values.kokuListener.volumes }}
+        - name: {{ .name }}
+          emptyDir: {} # You'll need to configure the actual volume source
+        {{- end }}
+{{- end }}        

@@ -1,0 +1,49 @@
+{{- if .Values.sourcesClient.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-sources-client
+  labels:
+    app.kubernetes.io/name: sources-client
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  replicas: 1 # Likely only need one client
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: sources-client
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: sources-client
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      restartPolicy: OnFailure # Corresponds to docker-compose's restart: on-failure
+      containers:
+        - name: sources-client
+          image: {{ .Values.sourcesClient.image }}
+          workingDir: {{ .Values.sourcesClient.workingDir }}
+          entrypoint: {{ .Values.sourcesClient.entrypoint }}
+          ports:
+            {{- range .Values.sourcesClient.ports }}
+            - containerPort: {{ .containerPort }}
+            {{- end }}
+          env:
+            {{- range $key, $value := .Values.sourcesClient.environment }}
+            - name: {{ $key }}
+              value: {{ quote $value }}
+            {{- end }}
+          volumeMounts:
+            {{- range .Values.sourcesClient.volumes }}
+            - name: {{ .name }}
+              mountPath: {{ .mountPath }}
+              {{- if .subPath }}
+              subPath: {{ .subPath }}
+              {{- end }}
+            {{- end }}
+      volumes:
+        {{- range .Values.sourcesClient.volumes }}
+        - name: {{ .name }}
+          emptyDir: {} # You'll need to configure the actual volume source
+        {{- end }}
+{{- end }}        

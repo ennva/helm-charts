@@ -1,0 +1,45 @@
+{{- if .Values.kokuBeat.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-koku-beat
+  labels:
+    app.kubernetes.io/name: koku-beat
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  replicas: 1 # Only one celery beat instance is usually needed
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: koku-beat
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: koku-beat
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      hostname: {{ .Values.kokuBeat.hostname }}
+      containers:
+        - name: koku-beat
+          image: {{ .Values.kokuBeat.image }}
+          workingDir: {{ .Values.kokuBeat.workingDir }}
+          entrypoint: {{ .Values.kokuBeat.entrypoint }}
+          env:
+            {{- range $key, $value := .Values.kokuBeat.environment }}
+            - name: {{ $key }}
+              value: {{ quote $value }}
+            {{- end }}
+          volumeMounts:
+            {{- range .Values.kokuBeat.volumes }}
+            - name: {{ .name }}
+              mountPath: {{ .mountPath }}
+              {{- if .subPath }}
+              subPath: {{ .subPath }}
+              {{- end }}
+            {{- end }}
+      volumes:
+        {{- range .Values.kokuBeat.volumes }}
+        - name: {{ .name }}
+          emptyDir: {} # You'll need to configure the actual volume source
+        {{- end }}
+{{- end }}        

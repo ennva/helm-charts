@@ -1,0 +1,48 @@
+{{- if .Values.masuServer.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-masu-server
+  labels:
+    app.kubernetes.io/name: masu-server
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  replicas: 1 # You might want to make this configurable in values.yaml
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: masu-server
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: masu-server
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      containers:
+        - name: masu-server
+          image: {{ .Values.masuServer.image }}
+          workingDir: {{ .Values.masuServer.workingDir }}
+          entrypoint: {{ .Values.masuServer.entrypoint }}
+          ports:
+            {{- range .Values.masuServer.ports }}
+            - containerPort: {{ .containerPort }}
+            {{- end }}
+          env:
+            {{- range $key, $value := .Values.masuServer.environment }}
+            - name: {{ $key }}
+              value: {{ quote $value }}
+            {{- end }}
+          volumeMounts:
+            {{- range .Values.masuServer.volumes }}
+            - name: {{ .name }}
+              mountPath: {{ .mountPath }}
+              {{- if .subPath }}
+              subPath: {{ .subPath }}
+              {{- end }}
+            {{- end }}
+      volumes:
+        {{- range .Values.masuServer.volumes }}
+        - name: {{ .name }}
+          emptyDir: {} # You'll need to configure the actual volume source
+        {{- end }}
+{{- end }}        
