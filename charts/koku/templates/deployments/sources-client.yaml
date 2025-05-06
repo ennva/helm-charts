@@ -18,6 +18,12 @@ spec:
         app.kubernetes.io/name: sources-client
         app.kubernetes.io/instance: {{ .Release.Name }}
     spec:
+      {{- if .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- range .Values.global.imagePullSecrets }}
+        - name: {{ .name }}
+        {{- end }}
+      {{- end }}
       restartPolicy: OnFailure # Corresponds to docker-compose's restart: on-failure
       containers:
         - name: sources-client

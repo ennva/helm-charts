@@ -47,7 +47,7 @@ spec:
             - name: DATABASE_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Release.Name }}-postgres-secrets
+                  name: {{ .Release.Name }}-postgres-secret
                   key: password
             - name: DATABASE_SSL
               value: "false"

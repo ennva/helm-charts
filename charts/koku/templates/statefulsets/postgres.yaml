@@ -25,7 +25,7 @@ spec:
           image: {{ .Values.postgres.image }}
           imagePullPolicy: {{ .Values.global.imagePullPolicy | default "IfNotPresent" }}
           ports:
-            - containerPort: {{ .Values.postgres.database | default "5432" }}
+            - containerPort: {{ .Values.postgres.servicePort | default 5432 }}
           env:
             - name: POSTGRES_DB
               value: {{ .Values.postgres.database | default "postgres" }}
@@ -38,6 +38,8 @@ spec:
                   key: {{ .Values.postgres.passwordKey }}
             - name: _PG_CREATE_DATABASES
               value: "{{ .Values.postgres.database | default "koku" }}|{{ .Values.postgres.user | default "koku" }},unleash|{{ .Values.postgres.user | default "koku" }}"
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
           volumeMounts:
             - name: postgres-data
               mountPath: /var/lib/postgresql/data

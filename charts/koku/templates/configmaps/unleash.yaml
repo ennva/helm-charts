@@ -5,5 +5,5 @@ metadata:
   name: {{ .Release.Name }}-unleash-config
 data:
   flags.json: |-
-    {{ .Values.unleash.flags | default "{}" | toYaml | indent 4 }}
+    {{ .Values.unleash.flags | default "{}" | toJson | indent 4 }}
 {{- end }}

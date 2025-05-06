@@ -18,6 +18,12 @@ spec:
         app.kubernetes.io/name: koku-beat
         app.kubernetes.io/instance: {{ .Release.Name }}
     spec:
+      {{- if .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- range .Values.global.imagePullSecrets }}
+        - name: {{ .name }}
+        {{- end }}
+      {{- end }}
       hostname: {{ .Values.kokuBeat.hostname }}
       containers:
         - name: koku-beat

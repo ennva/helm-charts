@@ -1,8 +1,8 @@
 global:
   imagePullPolicy: IfNotPresent
   # Optional: Specify image pull secrets if needed
-  # imagePullSecrets:
-  #   - name: my-registry-secret
+  imagePullSecrets:
+    - name: ghcr-secret
   userId: 1000 # Replace with your desired user ID
   groupId: 1000 # Replace with your desired group ID
 
@@ -35,14 +35,14 @@ kokuServer:
     RBAC_SERVICE_PATH: /r/insights/platform/rbac/v1/access/
     REDIS_HOST: redis
     REDIS_PORT: 6379
-    RBAC_CACHE_TTL: ""
+    RBAC_CACHE_TTL: "30"
     PROMETHEUS_MULTIPROC_DIR: /tmp
     API_PATH_PREFIX: /api/cost-management
     MAX_GROUP_BY_OVERRIDE: "3"
     AWS_SHARED_CREDENTIALS_FILE: ""
     GOOGLE_APPLICATION_CREDENTIALS: ""
-    OCI_SHARED_CREDENTIALS_FILE: ""
-    OCI_CLI_KEY_FILE: ""
+    OCI_SHARED_CREDENTIALS_FILE: "/etc/credentials/oci_config"
+    OCI_CLI_KEY_FILE: "/etc/credentials/oci_key_file.pem"
     OCI_PYTHON_SDK_NO_SERVICE_IMPORTS: "True"
     DEMO_ACCOUNTS: ""
     ACCOUNT_ENHANCED_METRICS: "False"
@@ -64,7 +64,9 @@ kokuServer:
     DELAYED_TASK_POLLING_MINUTES: "5"
   ports:
     - containerPort: 8000
-    - containerPort: 9000
+      targetPort: 8000
+    - containerPort: 8001
+      targetPort: 9000
   volumes:
     - name: koku-code
       mountPath: /koku/koku
@@ -77,8 +79,16 @@ kokuServer:
     - name: run-server-script
       mountPath: /koku/run_server.sh
       subPath: run_server.sh
-    - name: credentials
-      mountPath: /etc/credentials
+    - name: credentials-oci-key
+      mountPath: /etc/credentials/oci_key_file.pem
+      subPath: oci_key_file.pem
+      secret:
+        secretName: oci-config
+    - name: credentials-oci-config
+      mountPath: /etc/credentials/oci_config
+      subPath: oci_config
+      secret:
+        secretName: oci-config
 
 masuServer:
   enabled: true
@@ -92,7 +102,7 @@ masuServer:
     DATABASE_SERVICE_NAME: POSTGRES_SQL
     DATABASE_ENGINE: postgresql
     DATABASE_NAME: postgres
-    POSTGRES_SQL_SERVICE_HOST: db
+    POSTGRES_SQL_SERVICE_HOST: koku-postgres-service
     POSTGRES_SQL_SERVICE_PORT: 5432
     DATABASE_USER: postgres
     DATABASE_PASSWORD: postgres
@@ -110,7 +120,7 @@ masuServer:
     RBAC_SERVICE_PATH: /r/insights/platform/rbac/v1/access/
     REDIS_HOST: redis
     REDIS_PORT: 6379
-    RBAC_CACHE_TTL: ""
+    RBAC_CACHE_TTL: "30"
     PROMETHEUS_MULTIPROC_DIR: /tmp
     API_PATH_PREFIX: /api/cost-management
     ACCOUNT_ENHANCED_METRICS: "False"
@@ -132,7 +142,7 @@ masuServer:
     UNLEASH_LOG_LEVEL: WARNING
     AWS_SHARED_CREDENTIALS_FILE: ""
     GOOGLE_APPLICATION_CREDENTIALS: ""
-    OCI_SHARED_CREDENTIALS_FILE: ""
+    OCI_SHARED_CREDENTIALS_FILE: "/etc/credentials/oci-config.ini"
     OCI_CLI_KEY_FILE: ""
     OCI_PYTHON_SDK_NO_SERVICE_IMPORTS: "True"
     ENHANCED_ORG_ADMIN: "True"
@@ -140,8 +150,10 @@ masuServer:
     TRINO_PORT: "8080"
     TAG_ENABLED_LIMIT: "200"
   ports:
-    - containerPort: 8000
-    - containerPort: 9000
+    - containerPort: 5042
+      targetPort: 8000
+    - containerPort: 5001
+      targetPort: 9000
   volumes:
     - name: koku-code
       mountPath: /koku/koku
@@ -156,6 +168,8 @@ masuServer:
       subPath: run_server.sh
     - name: credentials
       mountPath: /etc/credentials
+      secret:
+        secretName: oci-config
 
 kokuWorker:
   enabled: true
@@ -230,47 +244,68 @@ kokuWorker:
     UNLEASH_TOKEN: "" # Required
     ENHANCED_ORG_ADMIN: "True"
   ports:
-    - containerPort: 9000
-      name: debug-port-range-1
-    - containerPort: 9000
-      name: debug-port-range-2
-    - containerPort: 9000
-      name: debug-port-range-3
-    - containerPort: 9000
-      name: debug-port-range-4
-    - containerPort: 9000
-      name: debug-port-range-5
-    - containerPort: 9000
-      name: debug-port-range-6
-    - containerPort: 9000
-      name: debug-port-range-7
-    - containerPort: 9000
-      name: debug-port-range-8
-    - containerPort: 9000
-      name: debug-port-range-9
-    - containerPort: 9000
-      name: debug-port-range-10
-    - containerPort: 9000
-      name: debug-port-range-11
-    - containerPort: 9000
-      name: debug-port-range-12
-    - containerPort: 9000
-      name: debug-port-range-13
-    - containerPort: 9000
-      name: debug-port-range-14
-    - containerPort: 9000
-      name: debug-port-range-15
-    - containerPort: 9000
-      name: debug-port-range-16
-    - containerPort: 9000
-      name: debug-port-range-17
-    - containerPort: 9000
-      name: debug-port-range-18
-    - containerPort: 9000
-      name: debug-port-range-19
-    - containerPort: 9000
-      name: debug-port-range-20
+    - containerPort: 6001
+      targetPort: 9000
+      name: debug-port-1
+    - containerPort: 6002
+      targetPort: 9000
+      name: debug-port-2
+    - containerPort: 6003
+      targetPort: 9000
+      name: debug-port-3
+    - containerPort: 6004
+      targetPort: 9000
+      name: debug-port-4
+    - containerPort: 6005
+      targetPort: 9000
+      name: debug-port-5
+    - containerPort: 6006
+      targetPort: 9000
+      name: debug-port-6
+    - containerPort: 6007
+      targetPort: 9000
+      name: debug-port-7
+    - containerPort: 6008
+      targetPort: 9000
+      name: debug-port-8
+    - containerPort: 6009
+      targetPort: 9000
+      name: debug-port-9
+    - containerPort: 6010
+      targetPort: 9000
+      name: debug-port-10
+    - containerPort: 6011
+      targetPort: 9000
+      name: debug-port-11
+    - containerPort: 6012
+      targetPort: 9000
+      name: debug-port-12
+    - containerPort: 6013
+      targetPort: 9000
+      name: debug-port-13
+    - containerPort: 6014
+      targetPort: 9000
+      name: debug-port-14
+    - containerPort: 6015
+      targetPort: 9000
+      name: debug-port-15
+    - containerPort: 6016
+      targetPort: 9000
+      name: debug-port-16
+    - containerPort: 6017
+      targetPort: 9000
+      name: debug-port-17
+    - containerPort: 6018
+      targetPort: 9000
+      name: debug-port-18
+    - containerPort: 6019
+      targetPort: 9000
+      name: debug-port-19
+    - containerPort: 6020
+      targetPort: 9000
+      name: debug-port-20
     - containerPort: 5678
+      targetPort: 5678
   volumes:
     - name: koku-code
       mountPath: /koku/koku
@@ -366,46 +401,66 @@ kokuListener:
     UNLEASH_TOKEN: "" # Required
     ENHANCED_ORG_ADMIN: "True"
   ports:
-    - containerPort: 9000
-      name: listener-port-range-1
-    - containerPort: 9000
-      name: listener-port-range-2
-    - containerPort: 9000
-      name: listener-port-range-3
-    - containerPort: 9000
-      name: listener-port-range-4
-    - containerPort: 9000
-      name: listener-port-range-5
-    - containerPort: 9000
-      name: listener-port-range-6
-    - containerPort: 9000
-      name: listener-port-range-7
-    - containerPort: 9000
-      name: listener-port-range-8
-    - containerPort: 9000
-      name: listener-port-range-9
-    - containerPort: 9000
-      name: listener-port-range-10
-    - containerPort: 9000
-      name: listener-port-range-11
-    - containerPort: 9000
-      name: listener-port-range-12
-    - containerPort: 9000
-      name: listener-port-range-13
-    - containerPort: 9000
-      name: listener-port-range-14
-    - containerPort: 9000
-      name: listener-port-range-15
-    - containerPort: 9000
-      name: listener-port-range-16
-    - containerPort: 9000
-      name: listener-port-range-17
-    - containerPort: 9000
-      name: listener-port-range-18
-    - containerPort: 9000
-      name: listener-port-range-19
-    - containerPort: 9000
-      name: listener-port-range-20
+    - containerPort: 7001
+      targetPort: 9000
+      name: listener-port-1
+    - containerPort: 7002
+      targetPort: 9000
+      name: listener-port-2
+    - containerPort: 7003
+      targetPort: 9000
+      name: listener-port-3
+    - containerPort: 7004
+      targetPort: 9000
+      name: listener-port-4
+    - containerPort: 7005
+      targetPort: 9000
+      name: listener-port-5
+    - containerPort: 7006
+      targetPort: 9000
+      name: listener-port-6
+    - containerPort: 7007
+      targetPort: 9000
+      name: listener-port-7
+    - containerPort: 7008
+      targetPort: 9000
+      name: listener-port-8
+    - containerPort: 7009
+      targetPort: 9000
+      name: listener-port-9
+    - containerPort: 7010
+      targetPort: 9000
+      name: listener-port-10
+    - containerPort: 7011
+      targetPort: 9000
+      name: listener-port-11
+    - containerPort: 7012
+      targetPort: 9000
+      name: listener-port-12
+    - containerPort: 7013
+      targetPort: 9000
+      name: listener-port-13
+    - containerPort: 7014
+      targetPort: 9000
+      name: listener-port-14
+    - containerPort: 7015
+      targetPort: 9000
+      name: listener-port-15
+    - containerPort: 7016
+      targetPort: 9000
+      name: listener-port-16
+    - containerPort: 7017
+      targetPort: 9000
+      name: listener-port-17
+    - containerPort: 7018
+      targetPort: 9000
+      name: listener-port-18
+    - containerPort: 7019
+      targetPort: 9000
+      name: listener-port-19
+    - containerPort: 7020
+      targetPort: 9000
+      name: listener-port-20
   volumes:
     - name: koku-code
       mountPath: /koku/koku
@@ -476,7 +531,8 @@ subsWorker:
     UNLEASH_TOKEN: "" # Required
     ENHANCED_ORG_ADMIN: "True"
   ports:
-    - containerPort: 9000
+    - containerPort: 7021
+      targetPort: 9000
   volumes:
     - name: koku-code
       mountPath: /koku/koku
@@ -547,8 +603,10 @@ sourcesClient:
     UNLEASH_TOKEN: "" # Required
     ENHANCED_ORG_ADMIN: "True"
   ports:
-    - containerPort: 8000
-    - containerPort: 9000
+    - containerPort: 4000
+      targetPort: 8000
+    - containerPort: 4001
+      targetPort: 9000
   volumes:
     - name: koku-code
       mountPath: /koku/koku
@@ -563,7 +621,7 @@ sourcesClient:
 
 kokuBeat:
   enabled: true
-  image: "your-registry/koku-base:latest" # Replace with your actual base image
+  image: "ghcr.io/ennva/koku/koku-base:0.0.1" # Replace with your actual base image
   containerName: koku_beat
   hostname: koku-beat
   workingDir: /koku/koku
@@ -607,12 +665,12 @@ kokuBeat:
 
 postgres:
   enabled: true
-  image: ghcr.io/ennva/koku-db:0.0.1
+  image: ghcr.io/ennva/koku/koku-db:0.0.1
   replicas: 1
   servicePort: 5432
   database: koku
   user: koku
-  existingSecret: "postgres-secret"  # The secret name you created with "kubectl create secret generic postgres-secret --from-literal=password=<your_password>"
+  existingSecret: "koku-postgres-secret"  # The secret name you created with "kubectl create secret generic postgres-secret --from-literal=password=<your_password>"
   passwordKey: "password" # The key within the secret that contains the password
   storage: 10Gi
 
@@ -656,7 +714,12 @@ unleash:
   patToken: "user:6188b62f2f59348f3c195b66983147111682f4bb78a3f7ed9626bd84"
   database: unleash
   logLevel: INFO
-  flags: {}
+  flags:
+    features:
+      - name: "my-feature"
+        enabled: true
+        strategies:
+          - name: "default"
   # Example flags configuration:
   # flags:
   #   myFeature: true
@@ -690,16 +753,34 @@ parquet_bucket:
   create:
     enabled: true
 
-hive_metastore:
-  enabled: true
+hiveMetastore:
   image: quay.io/redhat-services-prod/cost-mgmt-dev-tenant/ubi-hive:2f89bfb
-  replicas: 1
-  servicePort: 9083
-  config: |
-    <?xml version="1.0"?>
-    <?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
-    <configuration>
-      </configuration>
+  containerName: hive-metastore
+  ports:
+    - containerPort: 8000
+      servicePort: 9083 # The port to expose via the Kubernetes Service
+  environment:
+    HIVE_LOGLEVEL: INFO
+    S3_ENDPOINT: http://koku-minio:9000
+    S3_ACCESS_KEY: kokuminioaccess
+    S3_SECRET: kokuminiosecret
+    S3_BUCKET_NAME: koku-bucket
+    S3_BUCKET_PATH: data
+    POSTGRES_SQL_SERVICE_HOST: koku-postgres-service
+    POSTGRES_SQL_SERVICE_PORT: 5432
+    DATABASE_NAME: hive
+    DATABASE_USER: hive
+    DATABASE_PASSWORD: hive
+  volumes:
+    - name: metastore-config
+      mountPath: /opt/hive-metastore-bin/conf/metastore-site.xml
+      subPath: metastore-site.xml
+  # dependencies: # Kubernetes doesn't directly handle depends_on like Docker Compose
+  #   - db
+  #   - minio
+  #   - create-parquet-bucket
+  # You might need to handle these dependencies using init containers,
+  # readiness probes, or application-level logic.
 
 ingress:
   enabled: true

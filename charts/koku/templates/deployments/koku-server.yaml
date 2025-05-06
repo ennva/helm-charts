@@ -18,11 +18,17 @@ spec:
         app.kubernetes.io/name: koku-server
         app.kubernetes.io/instance: {{ .Release.Name }}
     spec:
+      {{- if .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- range .Values.global.imagePullSecrets }}
+        - name: {{ .name }}
+        {{- end }}
+      {{- end }}
       containers:
         - name: koku-server
           image: {{ .Values.kokuServer.image }}
-          workingDir: {{ .Values.kokuServer.workingDir }}
-          entrypoint: {{ .Values.kokuServer.entrypoint }}
+          #workingDir: {{ .Values.kokuServer.workingDir }}
+          #entrypoint: {{ .Values.kokuServer.entrypoint }}
           ports:
             {{- range .Values.kokuServer.ports }}
             - containerPort: {{ .containerPort }}
@@ -43,6 +49,11 @@ spec:
       volumes:
         {{- range .Values.kokuServer.volumes }}
         - name: {{ .name }}
+          {{- if .secret }}
+          secret:
+            secretName: {{ .secret.secretName }}
+          {{- else }}
           emptyDir: {} # You'll need to configure the actual volume source
+          {{- end }}
         {{- end }}
 {{- end }}        

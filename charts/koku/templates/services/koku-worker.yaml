@@ -12,9 +12,9 @@ spec:
     app.kubernetes.io/instance: {{ .Release.Name }}
   ports:
     {{- range .Values.kokuWorker.ports }}
-    - name: http-{{ .containerPort | replace "." "-" }} # Sanitize port names
+    - name: http-{{ printf "%v" .containerPort | replace "." "-" }}
       protocol: TCP
       port: {{ .containerPort }}
-      targetPort: {{ .containerPort }}
+      targetPort: {{ .targetPort }}
     {{- end }}
 {{- end }}

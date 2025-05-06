@@ -1,9 +1,9 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: "{{ include "koku-chart.fullname" . }}-test-connection"
+  name: "{{ include "koku.fullname" . }}-test-connection"
   labels:
-    {{- include "koku-chart.labels" . | nindent 4 }}
+    {{- include "koku.labels" . | nindent 4 }}
   annotations:
     "helm.sh/hook": test
 spec:
@@ -11,5 +11,5 @@ spec:
     - name: wget
       image: busybox
       command: ['wget']
-      args: ['{{ include "koku-chart.fullname" . }}:{{ .Values.service.port }}']
+      args: ['{{ include "koku.fullname" . }}:{{ (index .Values.kokuServer.ports 0).containerPort }}']
   restartPolicy: Never

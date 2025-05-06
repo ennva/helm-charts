@@ -50,10 +50,10 @@ spec:
               value: {{ .Values.minio.user | default "kminio" }}
             - name: MINIO_GROUPNAME
               value: {{ .Values.minio.group | default "kminio" }}
-          command: ["server", "/data", "--console-address", ":9090"]
+          command: ["minio", "server", "/home/kminio/data", "--console-address", ":9090"]
           volumeMounts:
             - name: minio-data
-              mountPath: /data
+              mountPath: /home/kminio/data
           readinessProbe:
             httpGet:
               path: /minio/health/live

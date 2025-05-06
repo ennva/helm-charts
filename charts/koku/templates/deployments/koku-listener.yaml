@@ -18,6 +18,12 @@ spec:
         app.kubernetes.io/name: koku-listener
         app.kubernetes.io/instance: {{ .Release.Name }}
     spec:
+      {{- if .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- range .Values.global.imagePullSecrets }}
+        - name: {{ .name }}
+        {{- end }}
+      {{- end }}
       containers:
         - name: koku-listener
           image: {{ .Values.kokuListener.image }}

@@ -18,6 +18,12 @@ spec:
         app.kubernetes.io/name: masu-server
         app.kubernetes.io/instance: {{ .Release.Name }}
     spec:
+      {{- if .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- range .Values.global.imagePullSecrets }}
+        - name: {{ .name }}
+        {{- end }}
+      {{- end }}
       containers:
         - name: masu-server
           image: {{ .Values.masuServer.image }}
