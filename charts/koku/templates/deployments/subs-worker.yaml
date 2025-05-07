@@ -27,6 +27,7 @@ spec:
       containers:
         - name: subs-worker
           image: {{ .Values.subsWorker.image }}
+          imagePullPolicy: {{ .Values.global.imagePullPolicy | default "IfNotPresent" }}
           workingDir: {{ .Values.subsWorker.workingDir }}
           entrypoint: {{ .Values.subsWorker.entrypoint }}
           ports:

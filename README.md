@@ -2,7 +2,11 @@
 
 ## Personal Helm charts
 
-1. Create a secrets for ghrc repo, OCI config
+### <u>Prerequisites</u>
+
+**Create a secrets**
+
+- **For ghrc repo**
 
 ```bash
 kubectl create secret docker-registry <pull_secret_name> \
@@ -11,10 +15,19 @@ kubectl create secret docker-registry <pull_secret_name> \
   --docker-password=YOUR_GITHUB_PAT \
   --docker-email=YOUR_EMAIL
 ```
-For ocp link tthe secret for pull
+If ocp, link the secret for pull
 ```bash
     oc secrets link default <pull_secret_name> --for=pull
 ```
+Reference the secret in Helm Chart
+```yaml
+spec:
+  template:
+    spec:
+      imagePullSecrets:
+        - name: ghcr-secret
+```
+- **For OCI config**
 
 Suppose your ~/.oci/config file looks like this:
 ```ini
@@ -31,65 +44,15 @@ kubectl create secret generic oci-config \
   --from-file=oci_config=/path/to/oci_config \
   --from-file=oci_api_key.pem=/path/to/oci_api_key.pem
 ```
-Modify your Helm values.yaml
-```bash
-env:
-  - name: OCI_SHARED_CREDENTIALS_FILE
-    value: /etc/oci/config
 
-volumes:
-  - name: oci-config-volume
-    secret:
-      secretName: oci-config
 
-volumeMounts:
-  - name: oci-config-volume
-    mountPath: /etc/oci
-    readOnly: true
-```
-Modify your Helm deployment.yaml (template)
-```bash
-spec:
-  containers:
-    - name: {{ .Chart.Name }}
-      image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-      env:
-{{ toYaml .Values.env | indent 8 }}
-      volumeMounts:
-{{ toYaml .Values.volumeMounts | indent 8 }}
-  volumes:
-{{ toYaml .Values.volumes | indent 6 }}
-```
-
-2. Reference the secret in Helm Chart
-```yaml
-spec:
-  template:
-    spec:
-      imagePullSecrets:
-        - name: ghcr-secret
-```
-or in **values.yaml**
-```yaml
-imagePullSecrets:
-  - name: ghcr-secret
-```
-then apply it in your template
-```yaml
-spec:
-  template:
-    spec:
-      imagePullSecrets:
-        {{- toYaml .Values.imagePullSecrets | nindent 8 }}
-```
-
-1. Create a secret for postgres datatbase.
+- **For postgres database**
 
 ```bash
-kubectl create secret generic koku-postgres-secret --from-literal=password=<your_password>
+kubectl create secret generic koku-postgres-secret --from-literal=user=<your_user> --from-literal=password=<your_password>
 ```
 
-1. Create a secret for minio.
+- **For minio.**
 
 ```bash
 kubectl create secret generic koku-minio-root-credentials --from-literal=username=<minio_root_username> --from-literal=password=<minio_root_password>
@@ -98,6 +61,22 @@ kubectl create secret generic koku-minio-root-credentials --from-literal=usernam
 
 ```bash
 helm install koku koku/koku
+```
+
+---
+
+### ✅ How to generate a real `oci_api_key.pem`
+
+If you want to generate it securely yourself, run:
+
+```bash
+openssl genrsa -out oci_api_key.pem 2048
+```
+
+And to get the corresponding public key (used in your OCI user config):
+
+```bash
+openssl rsa -pubout -in oci_api_key.pem -out oci_api_key_public.pem
 ```
 ---
 A sample `oci_api_key.pem` is simply an RSA **private key** in PEM format. You can generate one locally using OpenSSL, but here’s an example of what the file *looks like*:
@@ -122,21 +101,5 @@ f6H5N1yo3N3Z5PdzT5cxMhaNiwM0+7OM9EepRG7M3bwXQFznLDG5zswU5T9N9gQZ
 ```
 
 > ⚠️ **This is only a dummy/sample**. Never use a public example key in real environments.
-
----
-
-### ✅ How to generate a real `oci_api_key.pem`
-
-If you want to generate it securely yourself, run:
-
-```bash
-openssl genrsa -out oci_api_key.pem 2048
-```
-
-And to get the corresponding public key (used in your OCI user config):
-
-```bash
-openssl rsa -pubout -in oci_api_key.pem -out oci_api_key_public.pem
-```
 
 ---

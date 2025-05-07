@@ -27,16 +27,31 @@ spec:
       containers:
         - name: masu-server
           image: {{ .Values.masuServer.image }}
-          workingDir: {{ .Values.masuServer.workingDir }}
-          entrypoint: {{ .Values.masuServer.entrypoint }}
+          imagePullPolicy: {{ .Values.global.imagePullPolicy | default "IfNotPresent" }}
+          #workingDir: {{ .Values.masuServer.workingDir | quote }}
+          #command: {{ toJson .Values.masuServer.entrypoint }}
           ports:
             {{- range .Values.masuServer.ports }}
             - containerPort: {{ .containerPort }}
             {{- end }}
           env:
             {{- range $key, $value := .Values.masuServer.environment }}
+            {{- if eq "DATABASE_PASSWORD" $key }}
+            - name: {{ $key }}
+              valueFrom:
+                secretKeyRef:
+                  name: koku-postgres-secret
+                  key: password
+            {{- else if eq "DATABASE_USER" $key }}
+            - name: {{ $key }}
+              valueFrom:
+                secretKeyRef:
+                  name: koku-postgres-secret
+                  key: user
+            {{- else }}
             - name: {{ $key }}
               value: {{ quote $value }}
+            {{- end }}
             {{- end }}
           volumeMounts:
             {{- range .Values.masuServer.volumes }}
@@ -49,6 +64,15 @@ spec:
       volumes:
         {{- range .Values.masuServer.volumes }}
         - name: {{ .name }}
-          emptyDir: {} # You'll need to configure the actual volume source
+          {{- if .secret }}
+          secret:
+            secretName: {{ .secret.secretName }}
+          {{- else if .configMap }}
+          configMap:
+            name: {{ .configMap.name }}
+            defaultMode: {{ .configMap.defaultMode | default 420 }}
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
         {{- end }}
 {{- end }}        

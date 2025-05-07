@@ -27,6 +27,7 @@ spec:
       containers:
         - name: koku-listener
           image: {{ .Values.kokuListener.image }}
+          imagePullPolicy: {{ .Values.global.imagePullPolicy | default "IfNotPresent" }}
           workingDir: {{ .Values.kokuListener.workingDir }}
           entrypoint: {{ .Values.kokuListener.entrypoint }}
           ports:

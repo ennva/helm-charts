@@ -37,7 +37,7 @@ spec:
                   name: {{ .Values.postgres.existingSecret }}
                   key: {{ .Values.postgres.passwordKey }}
             - name: _PG_CREATE_DATABASES
-              value: "{{ .Values.postgres.database | default "koku" }}|{{ .Values.postgres.user | default "koku" }},unleash|{{ .Values.postgres.user | default "koku" }}"
+              value: {{ printf "%s|%s,unleash|%s" (.Values.postgres.database | default "koku") (.Values.postgres.user | default "koku") (.Values.postgres.user | default "koku") | quote }}
             - name: PGDATA
               value: /var/lib/postgresql/data/pgdata
           volumeMounts:

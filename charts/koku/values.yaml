@@ -1,5 +1,5 @@
 global:
-  imagePullPolicy: IfNotPresent
+  imagePullPolicy: Always #IfNotPresent
   # Optional: Specify image pull secrets if needed
   imagePullSecrets:
     - name: ghcr-secret
@@ -11,7 +11,7 @@ kokuBase:
 
 kokuServer:
   enabled: true
-  image: "ghcr.io/ennva/koku/koku-base:0.0.1"
+  image: "ghcr.io/ennva/koku/koku-base:0.0.2"
   containerName: koku-server
   workingDir: /koku
   entrypoint:
@@ -20,7 +20,7 @@ kokuServer:
     DATABASE_SERVICE_NAME: POSTGRES_SQL
     DATABASE_ENGINE: postgresql
     DATABASE_NAME: postgres
-    POSTGRES_SQL_SERVICE_HOST: db
+    POSTGRES_SQL_SERVICE_HOST: koku-postgres-service
     POSTGRES_SQL_SERVICE_PORT: 5432
     DATABASE_USER: postgres
     DATABASE_PASSWORD: postgres
@@ -52,10 +52,10 @@ kokuServer:
     GUNICORN_THREADS: "False"
     RETAIN_NUM_MONTHS: "4"
     NOTIFICATION_CHECK_TIME: "24"
-    UNLEASH_HOST: unleash
+    UNLEASH_HOST: koku-unleash-service
     UNLEASH_PREFIX: http
     UNLEASH_PORT: "4242"
-    UNLEASH_TOKEN: "" # Required
+    UNLEASH_TOKEN: "*:development.dbffffc83b1f92eeaf133a7eb878d4c58231acc159b5e1478ce53cfc" # Required
     UNLEASH_LOG_LEVEL: WARNING
     QE_SCHEMA: ""
     ENHANCED_ORG_ADMIN: "True"
@@ -92,10 +92,12 @@ kokuServer:
 
 masuServer:
   enabled: true
-  image: "ghcr.io/ennva/koku/koku-base:0.0.1"
+  image: "ghcr.io/ennva/koku/koku-base:0.0.2"
   containerName: masu-server
   workingDir: /koku
   entrypoint:
+    - /bin/bash
+    - -c
     - /koku/run_server.sh
   environment:
     MASU: "True"
@@ -135,15 +137,15 @@ masuServer:
     GUNICORN_THREADS: "False"
     RETAIN_NUM_MONTHS: "4"
     NOTIFICATION_CHECK_TIME: "24"
-    UNLEASH_HOST: unleash
+    UNLEASH_HOST: koku-unleash-service
     UNLEASH_PREFIX: http
     UNLEASH_PORT: "4242"
-    UNLEASH_TOKEN: "" # Required
+    UNLEASH_TOKEN: "*:development.dbffffc83b1f92eeaf133a7eb878d4c58231acc159b5e1478ce53cfc" # Required
     UNLEASH_LOG_LEVEL: WARNING
     AWS_SHARED_CREDENTIALS_FILE: ""
     GOOGLE_APPLICATION_CREDENTIALS: ""
-    OCI_SHARED_CREDENTIALS_FILE: "/etc/credentials/oci-config.ini"
-    OCI_CLI_KEY_FILE: ""
+    OCI_SHARED_CREDENTIALS_FILE: "/etc/credentials/oci_config"
+    OCI_CLI_KEY_FILE: "/etc/credentials/oci_key_file.pem"
     OCI_PYTHON_SDK_NO_SERVICE_IMPORTS: "True"
     ENHANCED_ORG_ADMIN: "True"
     TRINO_HOST: trino
@@ -166,14 +168,23 @@ masuServer:
     - name: run-server-script
       mountPath: /koku/run_server.sh
       subPath: run_server.sh
-    - name: credentials
-      mountPath: /etc/credentials
+      configMap:
+        name: koku-run-server-config
+        defaultMode: 0755
+    - name: credentials-oci-key
+      mountPath: /etc/credentials/oci_key_file.pem
+      subPath: oci_key_file.pem
+      secret:
+        secretName: oci-config
+    - name: credentials-oci-config
+      mountPath: /etc/credentials/oci_config
+      subPath: oci_config
       secret:
         secretName: oci-config
 
 kokuWorker:
   enabled: true
-  image: "ghcr.io/ennva/koku/koku-base:0.0.1"
+  image: "ghcr.io/ennva/koku/koku-base:0.0.2"
   hostname: koku-worker-1
   workingDir: /koku/koku
   entrypoint:
@@ -352,7 +363,7 @@ kokuWorker:
 
 kokuListener:
   enabled: true
-  image: "ghcr.io/ennva/koku/koku-base:0.0.1"
+  image: "ghcr.io/ennva/koku/koku-base:0.0.2"
   containerName: koku-listener
   workingDir: /koku/
   entrypoint:
@@ -473,7 +484,7 @@ kokuListener:
 
 subsWorker:
   enabled: true
-  image: "ghcr.io/ennva/koku/koku-base:0.0.1"
+  image: "ghcr.io/ennva/koku/koku-base:0.0.2"
   containerName: subs-worker
   workingDir: /koku/koku
   entrypoint:
@@ -546,7 +557,7 @@ subsWorker:
       mountPath: /etc/credentials
 
 sourcesClient:
-  image: "ghcr.io/ennva/koku/koku-base:0.0.1"
+  image: "ghcr.io/ennva/koku/koku-base:0.0.2"
   containerName: sources_client
   workingDir: /koku/
   entrypoint:
@@ -621,7 +632,7 @@ sourcesClient:
 
 kokuBeat:
   enabled: true
-  image: "ghcr.io/ennva/koku/koku-base:0.0.1" # Replace with your actual base image
+  image: "ghcr.io/ennva/koku/koku-base:0.0.2" # Replace with your actual base image
   containerName: koku_beat
   hostname: koku-beat
   workingDir: /koku/koku
@@ -687,6 +698,20 @@ postgres:
     minReplicas: 1
     maxReplicas: 5
     targetCPUUtilizationPercentage: 80
+
+pgadmin:
+  enabled: true
+  image: dpage/pgadmin4
+  tag: latest
+  email: postgres@local.dev
+  password: postgres
+  port: 8432
+  containerPort: 80
+
+  volumeMounts:
+    serversFile:
+      enabled: true
+      path: ./files/pgadmin_servers.json
 
 redis:
   enabled: true
@@ -790,10 +815,12 @@ ingress:
       - koku.example.com
       - masu.example.com
       - sources.example.com
+      - minio.example.com
     secretName: koku-tls-secret # Name of the Kubernetes Secret containing TLS certificate and key
   kokuServer:
     hostname: koku.example.com
-    path: "/api/cost-management"
+    path: "/api/cost-management(/.*|$)"
+    pathType: ImplementationSpecific
   kokuServerAdmin:
     hostname: koku.example.com
     path: "/admin"
@@ -809,6 +836,9 @@ ingress:
   sourcesClientAdmin:
     hostname: sources.example.com
     path: "/sources-admin"
+  minioConsole:
+    hostname: minio.example.com
+    path: "/minio"
 
 route:
   enabled: false # Set to true if deploying on OpenShift

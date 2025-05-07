@@ -28,6 +28,7 @@ spec:
       containers:
         - name: koku-beat
           image: {{ .Values.kokuBeat.image }}
+          imagePullPolicy: {{ .Values.global.imagePullPolicy | default "IfNotPresent" }}
           workingDir: {{ .Values.kokuBeat.workingDir }}
           entrypoint: {{ .Values.kokuBeat.entrypoint }}
           env:

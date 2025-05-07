@@ -28,6 +28,7 @@ spec:
       containers:
         - name: koku-worker
           image: {{ .Values.kokuWorker.image }}
+          imagePullPolicy: {{ .Values.global.imagePullPolicy | default "IfNotPresent" }}
           workingDir: {{ .Values.kokuWorker.workingDir }}
           entrypoint: {{ .Values.kokuWorker.entrypoint }}
           ports:
