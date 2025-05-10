@@ -28,8 +28,8 @@ spec:
         - name: masu-server
           image: {{ .Values.masuServer.image }}
           imagePullPolicy: {{ .Values.global.imagePullPolicy | default "IfNotPresent" }}
-          #workingDir: {{ .Values.masuServer.workingDir | quote }}
-          #command: {{ toJson .Values.masuServer.entrypoint }}
+          workingDir: {{ .Values.masuServer.workingDir | quote }}
+          command: {{ toJson .Values.masuServer.entrypoint }}
           ports:
             {{- range .Values.masuServer.ports }}
             - containerPort: {{ .containerPort }}

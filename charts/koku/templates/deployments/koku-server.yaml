@@ -29,8 +29,8 @@ spec:
         - name: koku-server
           image: {{ .Values.kokuServer.image }}
           imagePullPolicy: {{ .Values.global.imagePullPolicy | default "IfNotPresent" }}
-          #workingDir: {{ .Values.kokuServer.workingDir }}
-          #entrypoint: {{ .Values.kokuServer.entrypoint }}
+          workingDir: {{ .Values.kokuServer.workingDir | quote }}
+          command: {{ toJson .Values.kokuServer.entrypoint }}
           ports:
             {{- range .Values.kokuServer.ports }}
             - containerPort: {{ .containerPort }}

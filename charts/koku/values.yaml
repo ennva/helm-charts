@@ -1,5 +1,5 @@
 global:
-  imagePullPolicy: Always #IfNotPresent
+  imagePullPolicy: IfNotPresent #Always
   # Optional: Specify image pull secrets if needed
   imagePullSecrets:
     - name: ghcr-secret
@@ -7,15 +7,22 @@ global:
   groupId: 1000 # Replace with your desired group ID
 
 kokuBase:
-  image: "ghcr.io/ennva/koku/koku-base:0.0.1" 
+  image: "ghcr.io/ennva/koku/koku-base:0.0.2"
+
+kokuBaseDev:
+  enabled: false
+  image: "ghcr.io/ennva/koku/koku-base:0.0.1-dev"
+  imagePullPolicy: Always
 
 kokuServer:
   enabled: true
   image: "ghcr.io/ennva/koku/koku-base:0.0.2"
   containerName: koku-server
-  workingDir: /koku
+  workingDir: /opt/koku
   entrypoint:
-    - /koku/run_server.sh
+    - /bin/bash
+    - -c
+    - ./run_server.sh
   environment:
     DATABASE_SERVICE_NAME: POSTGRES_SQL
     DATABASE_ENGINE: postgresql
@@ -68,17 +75,17 @@ kokuServer:
     - containerPort: 8001
       targetPort: 9000
   volumes:
-    - name: koku-code
-      mountPath: /koku/koku
-    - name: unleash-config
-      mountPath: /koku/.unleash
-    - name: db-functions
-      mountPath: /koku/db_functions
-    - name: scripts
-      mountPath: /koku/scripts
-    - name: run-server-script
-      mountPath: /koku/run_server.sh
-      subPath: run_server.sh
+    #- name: koku-code
+    #  mountPath: /koku/koku
+    #- name: unleash-config
+    #  mountPath: /koku/.unleash
+    #- name: db-functions
+    #  mountPath: /koku/db_functions
+    #- name: scripts
+    #  mountPath: /koku/scripts
+    #- name: run-server-script
+    #  mountPath: /koku/run_server.sh
+    #  subPath: run_server.sh
     - name: credentials-oci-key
       mountPath: /etc/credentials/oci_key_file.pem
       subPath: oci_key_file.pem
@@ -94,11 +101,11 @@ masuServer:
   enabled: true
   image: "ghcr.io/ennva/koku/koku-base:0.0.2"
   containerName: masu-server
-  workingDir: /koku
+  workingDir: /opt/koku
   entrypoint:
     - /bin/bash
     - -c
-    - /koku/run_server.sh
+    - ./run_server.sh
   environment:
     MASU: "True"
     DATABASE_SERVICE_NAME: POSTGRES_SQL
@@ -157,20 +164,20 @@ masuServer:
     - containerPort: 5001
       targetPort: 9000
   volumes:
-    - name: koku-code
-      mountPath: /koku/koku
-    - name: unleash-config
-      mountPath: /koku/.unleash
-    - name: db-functions
-      mountPath: /koku/db_functions
-    - name: scripts
-      mountPath: /koku/scripts
-    - name: run-server-script
-      mountPath: /koku/run_server.sh
-      subPath: run_server.sh
-      configMap:
-        name: koku-run-server-config
-        defaultMode: 0755
+    #- name: koku-code
+    #  mountPath: /koku/koku
+    #- name: unleash-config
+    #  mountPath: /koku/.unleash
+    #- name: db-functions
+    #  mountPath: /koku/db_functions
+    #- name: scripts
+    #  mountPath: /koku/scripts
+    #- name: run-server-script
+    #  mountPath: /koku/run_server.sh
+    #  subPath: run_server.sh
+    #  configMap:
+    #    name: koku-run-server-config
+    #    defaultMode: 0755
     - name: credentials-oci-key
       mountPath: /etc/credentials/oci_key_file.pem
       subPath: oci_key_file.pem
@@ -195,7 +202,7 @@ kokuWorker:
     DATABASE_SERVICE_NAME: POSTGRES_SQL
     DATABASE_ENGINE: postgresql
     DATABASE_NAME: postgres
-    POSTGRES_SQL_SERVICE_HOST: db
+    POSTGRES_SQL_SERVICE_HOST: koku-postgres-service
     POSTGRES_SQL_SERVICE_PORT: 5432
     DATABASE_USER: postgres
     DATABASE_PASSWORD: postgres
@@ -380,11 +387,11 @@ kokuListener:
   environment:
     DJANGO_READ_DOT_ENV_FILE: "True"
     DATABASE_SERVICE_NAME: POSTGRES_SQL
-    POSTGRES_SQL_SERVICE_HOST: db
+    POSTGRES_SQL_SERVICE_HOST: koku-postgres-service
     POSTGRES_SQL_SERVICE_PORT: 5432
     DATABASE_ENGINE: postgresql
     DATABASE_NAME: postgres
-    DATABASE_HOST: db
+    DATABASE_HOST: koku-postgres-service
     DATABASE_PORT: 5432
     DATABASE_USER: postgres
     DATABASE_PASSWORD: postgres
@@ -509,7 +516,7 @@ subsWorker:
     DATABASE_SERVICE_NAME: POSTGRES_SQL
     DATABASE_ENGINE: postgresql
     DATABASE_NAME: postgres
-    POSTGRES_SQL_SERVICE_HOST: db
+    POSTGRES_SQL_SERVICE_HOST: koku-postgres-service
     POSTGRES_SQL_SERVICE_PORT: 5432
     DATABASE_USER: postgres
     DATABASE_PASSWORD: postgres
@@ -577,11 +584,11 @@ sourcesClient:
     DATABASE_SERVICE_NAME: POSTGRES_SQL
     DATABASE_ENGINE: postgresql
     DATABASE_NAME: postgres
-    POSTGRES_SQL_SERVICE_HOST: db
+    POSTGRES_SQL_SERVICE_HOST: koku-postgres-service
     POSTGRES_SQL_SERVICE_PORT: 5432
     DATABASE_USER: postgres
     DATABASE_PASSWORD: postgres
-    KOKU_API_HOST: koku-server
+    KOKU_API_HOST: koku-koku-server
     KOKU_API_PORT: "8000"
     KOKU_API_PATH_PREFIX: /api/cost-management/v1
     SOURCES_API_SVC_HOST: sources-server
@@ -647,7 +654,7 @@ kokuBeat:
     DATABASE_SERVICE_NAME: POSTGRES_SQL
     DATABASE_ENGINE: postgresql
     DATABASE_NAME: postgres
-    POSTGRES_SQL_SERVICE_HOST: db
+    POSTGRES_SQL_SERVICE_HOST: koku-postgres-service
     POSTGRES_SQL_SERVICE_PORT: 5432
     DATABASE_USER: postgres
     DATABASE_PASSWORD: postgres
@@ -659,7 +666,7 @@ kokuBeat:
     SCHEDULE_REPORT_CHECKS: "True"
     SOURCE_STATUS_SCHEDULE: ""
     UPLOAD_NORMALIZED_DATA_INTERVAL: "10000000"
-    UNLEASH_HOST: unleash
+    UNLEASH_HOST: koku-unleash-service
     UNLEASH_PREFIX: http
     UNLEASH_PORT: "4242"
     UNLEASH_TOKEN: "" # Required
@@ -676,11 +683,13 @@ kokuBeat:
 
 postgres:
   enabled: true
+  createSchema:
+    enabled: false
   image: ghcr.io/ennva/koku/koku-db:0.0.1
   replicas: 1
   servicePort: 5432
-  database: koku
-  user: koku
+  #database: koku
+  #user: koku
   existingSecret: "koku-postgres-secret"  # The secret name you created with "kubectl create secret generic postgres-secret --from-literal=password=<your_password>"
   passwordKey: "password" # The key within the secret that contains the password
   storage: 10Gi
@@ -698,6 +707,43 @@ postgres:
     minReplicas: 1
     maxReplicas: 5
     targetCPUUtilizationPercentage: 80
+
+  command:
+    - postgres
+    - -c
+    - ssl=on
+    - -c
+    - ssl_cert_file=/etc/ssl/certs/ssl-cert-snakeoil.pem
+    - -c
+    - ssl_key_file=/etc/ssl/private/ssl-cert-snakeoil.key
+    - -c
+    - max_connections=1710
+    - -c
+    - shared_preload_libraries=pg_stat_statements
+    - -c
+    - autovacuum_max_workers=8
+    - -c
+    - autovacuum_vacuum_cost_limit=4800
+    - -c
+    - autovacuum_vacuum_cost_delay=10
+    - -c
+    - max_locks_per_transaction=72
+    - -c
+    - pg_stat_statements.max=2000
+    - -c
+    - pg_stat_statements.save=off
+    - -c
+    - pg_stat_statements.track_utility=off
+    - -c
+    - track_activity_query_size=2048
+    - -c
+    - track_functions=pl
+    - -c
+    - log_min_error_statement=error
+    - -c
+    - log_min_duration_statement=2000
+    - -c
+    - logging_collector=on
 
 pgadmin:
   enabled: true
