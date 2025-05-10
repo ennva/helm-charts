@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pgadmin-servers
+data:
+  servers.json: |-
+{{ .Files.Get .Values.pgadmin.volumeMounts.serversFile.path | indent 4 }}

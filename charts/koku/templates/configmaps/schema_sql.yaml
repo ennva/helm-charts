@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-schema-sql
+data:
+  schema.sql: |
+{{ .Files.Get "files/postgres-bkp-all.sql" | indent 4 }}

@@ -1,0 +1,18 @@
+{{- if .Values.minio.enabled -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-minio-service
+spec:
+  selector:
+    app: {{ .Release.Name }}-minio
+  ports:
+    - name: http
+      protocol: TCP
+      port: {{ .Values.minio.servicePort | default 9000 }}
+      targetPort: 9000
+    - name: console
+      protocol: TCP
+      port: {{ .Values.minio.consolePort | default 9090 }}
+      targetPort: 9090
+{{- end }}

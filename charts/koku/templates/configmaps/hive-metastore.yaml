@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-hive-metastore-config
+  labels:
+    app.kubernetes.io/name: hive-metastore-config
+    app.kubernetes.io/instance: {{ .Release.Name }}
+data:
+  metastore-site.xml: |-
+    {{- with .Files.Get "files/metastore-site.xml" }}
+    {{ . | nindent 4 }}
+    {{- end }}

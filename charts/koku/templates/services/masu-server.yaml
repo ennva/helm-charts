@@ -1,0 +1,20 @@
+{{- if .Values.masuServer.ports }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-masu-server-svc
+  labels:
+    app.kubernetes.io/name: masu-server
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  selector:
+    app.kubernetes.io/name: masu-server
+    app.kubernetes.io/instance: {{ .Release.Name }}
+  ports:
+    {{- range .Values.masuServer.ports }}
+    - name: http-{{ .containerPort }}
+      protocol: TCP
+      port: {{ .containerPort }}
+      targetPort: {{ .targetPort }}
+    {{- end }}
+{{- end }}

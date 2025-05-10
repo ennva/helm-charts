@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: create-test-customer
+data:
+  create_test_customer.py: |
+{{ .Files.Get "files/create_test_customer.py" | indent 4 }}
+  test_customer.yaml: |
+{{ .Files.Get "files/test_customer.yaml" | indent 4 }}

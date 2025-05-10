@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-hive-metastore-svc
+  labels:
+    app.kubernetes.io/name: hive-metastore
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  selector:
+    app.kubernetes.io/name: hive-metastore
+    app.kubernetes.io/instance: {{ .Release.Name }}
+  ports:
+    - name: hive-metastore-port
+      protocol: TCP
+      port: {{ (index .Values.hiveMetastore.ports 0).servicePort }}
+      targetPort: {{ (index .Values.hiveMetastore.ports 0).containerPort }}

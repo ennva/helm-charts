@@ -1,0 +1,13 @@
+{{- if .Values.pushgateway.enabled -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-pushgateway-service
+spec:
+  selector:
+    app: {{ .Release.Name }}-pushgateway
+  ports:
+    - protocol: TCP
+      port: {{ .Values.pushgateway.servicePort | default 9091 }}
+      targetPort: 9091
+{{- end }}

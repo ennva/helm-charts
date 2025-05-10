@@ -1,0 +1,41 @@
+{{- if .Values.postgres.createSchema.enabled -}}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: create-db-schema
+spec:
+  template:
+    spec:
+      containers:
+      - name: schema-loader
+        image: postgres:16
+        env:
+        - name: POSTGRES_HOST
+          value: "koku-postgres-service"
+        - name: POSTGRES_PORT
+          value: "5432"
+        - name: POSTGRES_USER
+          value: "koku"
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: koku-postgres-secret
+              key: password
+        volumeMounts:
+        - name: sql-volume
+          mountPath: /sql
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          until pg_isready -h $POSTGRES_HOST -p $POSTGRES_PORT -U $POSTGRES_USER; do
+            echo "Waiting for database..."
+            sleep 2
+          done
+          echo "Database is ready. Applying schema..."
+          PGPASSWORD=$POSTGRES_PASSWORD psql -h $POSTGRES_HOST -p $POSTGRES_PORT -U $POSTGRES_USER -f /sql/schema.sql
+      restartPolicy: OnFailure
+      volumes:
+      - name: sql-volume
+        configMap:
+          name: koku-schema-sql
+{{- end }}
