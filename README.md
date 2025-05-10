@@ -103,3 +103,9 @@ f6H5N1yo3N3Z5PdzT5cxMhaNiwM0+7OM9EepRG7M3bwXQFznLDG5zswU5T9N9gQZ
 > ⚠️ **This is only a dummy/sample**. Never use a public example key in real environments.
 
 ---
+
+### Add remote repo locally
+
+```bash
+helm repo add ennva-koku https://ennva.github.io/helm-charts
+```
