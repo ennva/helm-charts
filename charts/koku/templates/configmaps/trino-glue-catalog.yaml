@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-trino-glue-catalog
+data:
+  glue.properties: |
+{{ .Files.Get "files/trino-catalog/glue.properties" | indent 4 }}

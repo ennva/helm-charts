@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-trino-config
+data:
+  config.properties: |
+{{ .Files.Get "files/trino-config.properties" | indent 4 }}

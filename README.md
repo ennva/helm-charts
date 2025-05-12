@@ -109,3 +109,102 @@ f6H5N1yo3N3Z5PdzT5cxMhaNiwM0+7OM9EepRG7M3bwXQFznLDG5zswU5T9N9gQZ
 ```bash
 helm repo add ennva-koku https://ennva.github.io/helm-charts
 ```
+---
+
+## Configure Git pre-commit
+
+You can **add a `pre-commit` hook** to block commits that contain secrets, credentials, or sensitive patterns by using the **[pre-commit](https://pre-commit.com/)** framework together with some specialized hooks like:
+
+* [detect-secrets](https://github.com/Yelp/detect-secrets)
+* [git-secrets](https://github.com/awslabs/git-secrets)
+* Built-in regex hooks
+
+---
+
+## ✅ Step-by-step guide to block secrets in commits
+
+### 1. Install `pre-commit`
+
+```bash
+pip install pre-commit
+```
+
+---
+
+### 2. Create `.pre-commit-config.yaml` in your repository root
+
+Here’s a sample configuration using `detect-secrets`:
+
+```yaml
+repos:
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.4.0
+    hooks:
+      - id: detect-secrets-hook
+```
+
+### Alternative: Use simple regex for blocking patterns (quick start)
+
+```yaml
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: detect-aws-credentials
+      - id: detect-private-key
+      - id: detect-secrets
+  - repo: local
+    hooks:
+      - id: block-common-patterns
+        name: Block common secret patterns
+        entry: grep -E 'AKIA[0-9A-Z]{16}|-----BEGIN PRIVATE KEY-----|password\s*='
+        language: system
+        types: [text]
+```
+
+---
+
+### 3. Install the hooks into your local git repo
+
+```bash
+pre-commit install
+```
+
+This will automatically install the `pre-commit` hook into `.git/hooks/pre-commit`.
+
+---
+
+### 4. (Optional) Scan existing code base
+
+```bash
+pre-commit run --all-files
+```
+
+---
+
+### 5. Add `.pre-commit-config.yaml` to your repository and commit it (after checking it doesn’t contain secrets!).
+
+---
+
+## ✅ Best practices:
+
+| Tool                     | Use case                                      |
+| ------------------------ | --------------------------------------------- |
+| `detect-secrets` (Yelp)  | Advanced, supports baselining, entropy checks |
+| `git-secrets` (AWS Labs) | Good for AWS keys, customizable regex         |
+| `pre-commit-hooks`       | Built-in basic AWS key, private key detectors |
+
+---
+
+## 🚀 Recommended combo:
+
+For **strong protection**, I recommend combining both:
+
+1. **Yelp detect-secrets (baseline support)**
+2. **AWS git-secrets (installed manually)**
+3. **Custom regex in pre-commit-config.yaml**
+
+---
+
+Would you also like a **pre-configured `detect-secrets` baseline + pre-commit that blocks commits if new secrets are found?**
+If yes, just say "**yes, baseline example.**"

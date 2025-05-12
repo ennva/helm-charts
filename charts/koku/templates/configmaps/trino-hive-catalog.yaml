@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-trino-hive-catalog
+data:
+  hive.properties: |
+{{ .Files.Get "files/trino-catalog/hive.properties" | indent 4 }}

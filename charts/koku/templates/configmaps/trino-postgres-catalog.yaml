@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-trino-postgres-catalog
+data:
+  postgres.properties: |
+{{ .Files.Get "files/trino-catalog/postgres.properties" | indent 4 }}

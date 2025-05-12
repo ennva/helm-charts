@@ -1,0 +1,137 @@
+{{- if .Values.trino.enabled -}}
+{{- $serviceName := "trino" -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-{{ $serviceName }}
+  labels: 
+    app.kubernetes.io/name: trino
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  replicas: {{ .Values.trino.replicaCount }}
+  selector:
+    matchLabels: 
+      app.kubernetes.io/name: {{ $serviceName }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels: 
+        app.kubernetes.io/name: {{ $serviceName }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      {{- if .Values.trino.securityContext.enabled }}
+      securityContext:
+        runAsUser: {{ .Values.trino.securityContext.runAsUser }}
+        fsGroup: {{ .Values.trino.securityContext.fsGroup }}
+        supplementalGroups: {{- toYaml .Values.trino.securityContext.supplementalGroups | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ $serviceName }}
+          image: {{ .Values.trino.image }}
+          imagePullPolicy: {{ .Values.trino.imagePullPolicy }}
+          {{- if .Values.trino.securityContext.enabled }}
+          securityContext:
+            runAsUser: {{ .Values.trino.securityContext.containerSecurityContext.runAsUser }}
+            fsGroup: {{ .Values.trino.securityContext.containerSecurityContext.fsGroup }}
+            supplementalGroups: {{- toYaml .Values.trino.securityContext.containerSecurityContext.supplementalGroups | nindent 12 }}
+          {{- end }}
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+            - name: discovery
+              containerPort: 10000
+              protocol: TCP
+          env:
+            - name: MY_NODE_ID
+              value: {{ .Values.trino.environment.MY_NODE_ID | quote }}
+            - name: LOCAL
+              value: {{ .Values.trino.environment.LOCAL | quote }}
+            - name: TRINO_LOG_LEVEL
+              value: {{ .Values.trino.environment.TRINO_LOG_LEVEL | quote }}
+            - name: TRINO_S3A_OR_S3
+              value: {{ .Values.trino.environment.TRINO_S3A_OR_S3 | quote }}
+            - name: MINIO_ENDPOINT
+              value: {{ .Values.trino.environment.MINIO_ENDPOINT | quote }}
+            - name: S3_ACCESS_KEY
+              value: {{ .Values.trino.environment.S3_ACCESS_KEY | quote }}
+            - name: S3_SECRET
+              value: {{ .Values.trino.environment.S3_SECRET | quote }}
+            - name: AWS_ACCESS_KEY_ID
+              value: {{ .Values.trino.environment.AWS_ACCESS_KEY_ID | quote }}
+            - name: AWS_SECRET_ACCESS_KEY
+              value: {{ .Values.trino.environment.AWS_SECRET_ACCESS_KEY | quote }}
+            - name: AWS_REGION
+              value: {{ .Values.trino.environment.AWS_REGION | quote }}
+            - name: S3_BUCKET_NAME
+              value: {{ .Values.trino.environment.S3_BUCKET_NAME | quote }}
+            - name: POSTGRES_SQL_SERVICE_HOST
+              value: {{ .Values.trino.environment.POSTGRES_SQL_SERVICE_HOST | quote }}
+            - name: POSTGRES_SQL_SERVICE_PORT
+              value: {{ .Values.trino.environment.POSTGRES_SQL_SERVICE_PORT | quote }}
+            - name: DATABASE_NAME
+              value: {{ .Values.trino.environment.DATABASE_NAME | quote }}
+            - name: DATABASE_USER
+              value: {{ .Values.trino.environment.DATABASE_USER | quote }}
+            - name: DATABASE_PASSWORD
+              value: {{ .Values.trino.environment.DATABASE_PASSWORD | quote }}
+          volumeMounts:
+            - name: trino-config
+              mountPath: /etc/trino/config.properties
+              subPath: config.properties
+            - name: trino-jvm-config
+              mountPath: /etc/trino/jvm.config
+              subPath: jvm.config
+            - name: trino-log-config
+              mountPath: /etc/trino/log.properties
+              subPath: log.properties
+            - name: trino-hive-catalog
+              mountPath: /etc/trino/catalog/hive.properties
+              subPath: hive.properties
+            - name: trino-glue-catalog
+              mountPath: /etc/trino/catalog/glue.properties
+              subPath: glue.properties
+            - name: trino-postgres-catalog
+              mountPath: /etc/trino/catalog/postgres.properties
+              subPath: postgres.properties
+            {{- if .Values.trino.persistence.enabled }}
+            - name: trino-data
+              mountPath: /data/trino/data
+            - name: trino-logs
+              mountPath: /data/trino/logs
+            {{- end }}
+          resources: {{- toYaml .Values.trino.resources | nindent 12 }}
+      volumes:
+        - name: trino-config
+          configMap:
+            name: {{ .Release.Name }}-{{ $serviceName }}-config
+        - name: trino-jvm-config
+          configMap:
+            name: {{ .Release.Name }}-{{ $serviceName }}-jvm-config
+        - name: trino-log-config
+          configMap:
+            name: {{ .Release.Name }}-{{ $serviceName }}-log-config
+        - name: trino-hive-catalog
+          configMap:
+            name: {{ .Release.Name }}-{{ $serviceName }}-hive-catalog
+        - name: trino-glue-catalog
+          configMap:
+            name: {{ .Release.Name }}-{{ $serviceName }}-glue-catalog
+        - name: trino-postgres-catalog
+          configMap:
+            name: {{ .Release.Name }}-{{ $serviceName }}-postgres-catalog
+        - name: trino-data
+          {{- if .Values.trino.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ .Values.trino.persistence.existingClaim | default (include "common.names.fullname" . ) }}
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        - name: trino-logs
+          {{- if .Values.trino.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ .Values.trino.persistence.existingClaim | default (include "common.names.fullname" . ) }}-logs
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+{{- end }}
