@@ -50,6 +50,15 @@ spec:
       volumes:
         {{- range .Values.kokuListener.volumes }}
         - name: {{ .name }}
-          emptyDir: {} # You'll need to configure the actual volume source
+          {{- if .secret }}
+          secret:
+            secretName: {{ .secret.secretName }}
+          {{- else if .configMap }}
+          configMap:
+            name: {{ .configMap.name }}
+            defaultMode: {{ .configMap.defaultMode | default 420 }}
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
         {{- end }}
 {{- end }}        

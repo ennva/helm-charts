@@ -256,10 +256,10 @@ kokuWorker:
     MAX_CELERY_TASKS_PER_WORKER: "10"
     RETAIN_NUM_MONTHS: "4"
     NOTIFICATION_CHECK_TIME: "24"
-    UNLEASH_HOST: unleash
+    UNLEASH_HOST: koku-unleash-service
     UNLEASH_PREFIX: http
     UNLEASH_PORT: "4242"
-    UNLEASH_TOKEN: "" # Required
+    UNLEASH_TOKEN: "*:development.dbffffc83b1f92eeaf133a7eb878d4c58231acc159b5e1478ce53cfc" # Required
     ENHANCED_ORG_ADMIN: "True"
   ports:
     - containerPort: 6001
@@ -325,14 +325,14 @@ kokuWorker:
     - containerPort: 5678
       targetPort: 5678
   volumes:
-    - name: koku-code
-      mountPath: /koku/koku
-    - name: unleash-config
-      mountPath: /koku/.unleash
-    - name: db-functions
-      mountPath: /koku/db_functions
-    - name: scripts
-      mountPath: /koku/scripts
+    #- name: koku-code
+    #  mountPath: /koku/koku
+    #- name: unleash-config
+    #  mountPath: /koku/.unleash
+    #- name: db-functions
+    #  mountPath: /koku/db_functions
+    #- name: scripts
+    #  mountPath: /koku/scripts
     - name: testing
       mountPath: /testing
     - name: azure-local
@@ -365,8 +365,16 @@ kokuWorker:
       mountPath: /tmp/gcp_local_bucket_2
     - name: gcp-local-4
       mountPath: /tmp/gcp_local_bucket_3
-    - name: credentials
-      mountPath: /etc/credentials
+    - name: credentials-oci-key
+      mountPath: /etc/credentials/oci_key_file.pem
+      subPath: oci_key_file.pem
+      secret:
+        secretName: oci-config
+    - name: credentials-oci-config
+      mountPath: /etc/credentials/oci_config
+      subPath: oci_config
+      secret:
+        secretName: oci-config
 
 kokuListener:
   enabled: true
@@ -374,13 +382,13 @@ kokuListener:
   containerName: koku-listener
   workingDir: /koku/
   entrypoint:
-    - watchmedo
-    - auto-restart
-    - "--directory=./koku"
-    - "--pattern=*.py"
-    - "--ignore-patterns=*test*"
-    - "--recursive"
-    - "--"
+    #- watchmedo
+    #- auto-restart
+    #- "--directory=./koku"
+    #- "--pattern=*.py"
+    #- "--ignore-patterns=*test*"
+    #- "--recursive"
+    #- "--"
     - python
     - koku/manage.py
     - listener
@@ -413,10 +421,10 @@ kokuListener:
     S3_SECRET: ""
     TRINO_HOST: trino
     TRINO_PORT: "8080"
-    UNLEASH_HOST: unleash
+    UNLEASH_HOST: koku-unleash-service
     UNLEASH_PREFIX: http
     UNLEASH_PORT: "4242"
-    UNLEASH_TOKEN: "" # Required
+    UNLEASH_TOKEN: "*:development.dbffffc83b1f92eeaf133a7eb878d4c58231acc159b5e1478ce53cfc" # Required
     ENHANCED_ORG_ADMIN: "True"
   ports:
     - containerPort: 7001
@@ -480,14 +488,24 @@ kokuListener:
       targetPort: 9000
       name: listener-port-20
   volumes:
-    - name: koku-code
-      mountPath: /koku/koku
-    - name: unleash-config
-      mountPath: /koku/.unleash
-    - name: db-functions
-      mountPath: /koku/db_functions
-    - name: scripts
-      mountPath: /koku/scripts
+    #- name: koku-code
+    #  mountPath: /koku/koku
+    #- name: unleash-config
+    #  mountPath: /koku/.unleash
+    #- name: db-functions
+    #  mountPath: /koku/db_functions
+    #- name: scripts
+    #  mountPath: /koku/scripts
+    - name: credentials-oci-key
+      mountPath: /etc/credentials/oci_key_file.pem
+      subPath: oci_key_file.pem
+      secret:
+        secretName: oci-config
+    - name: credentials-oci-config
+      mountPath: /etc/credentials/oci_config
+      subPath: oci_config
+      secret:
+        secretName: oci-config      
 
 subsWorker:
   enabled: true
@@ -495,13 +513,13 @@ subsWorker:
   containerName: subs-worker
   workingDir: /koku/koku
   entrypoint:
-    - watchmedo
-    - auto-restart
-    - "--directory=./"
-    - "--pattern=*.py"
-    - "--ignore-patterns=*test*"
-    - "--recursive"
-    - "--"
+    #- watchmedo
+    #- auto-restart
+    #- "--directory=./"
+    #- "--pattern=*.py"
+    #- "--ignore-patterns=*test*"
+    #- "--recursive"
+    #- "--"
     - celery
     - "-A"
     - "koku"
@@ -543,38 +561,47 @@ subsWorker:
     POD_CPU_LIMIT: "1"
     GUNICORN_WORKERS: "3"
     GUNICORN_THREADS: "False"
-    UNLEASH_HOST: unleash
+    UNLEASH_HOST: koku-unleash-service
     UNLEASH_PREFIX: http
     UNLEASH_PORT: "4242"
-    UNLEASH_TOKEN: "" # Required
+    UNLEASH_TOKEN: "*:development.dbffffc83b1f92eeaf133a7eb878d4c58231acc159b5e1478ce53cfc" # Required
     ENHANCED_ORG_ADMIN: "True"
   ports:
     - containerPort: 7021
       targetPort: 9000
   volumes:
-    - name: koku-code
-      mountPath: /koku/koku
-    - name: unleash-config
-      mountPath: /koku/.unleash
-    - name: db-functions
-      mountPath: /koku/db_functions
-    - name: scripts
-      mountPath: /koku/scripts
-    - name: credentials
-      mountPath: /etc/credentials
+    #- name: koku-code
+    #  mountPath: /koku/koku
+    #- name: unleash-config
+    #  mountPath: /koku/.unleash
+    #- name: db-functions
+    #  mountPath: /koku/db_functions
+    #- name: scripts
+    #  mountPath: /koku/scripts
+    - name: credentials-oci-key
+      mountPath: /etc/credentials/oci_key_file.pem
+      subPath: oci_key_file.pem
+      secret:
+        secretName: oci-config
+    - name: credentials-oci-config
+      mountPath: /etc/credentials/oci_config
+      subPath: oci_config
+      secret:
+        secretName: oci-config 
 
 sourcesClient:
+  enabled: true
   image: "ghcr.io/ennva/koku/koku-base:0.0.2"
   containerName: sources_client
-  workingDir: /koku/
+  workingDir: /opt/koku/
   entrypoint:
-    - watchmedo
-    - auto-restart
-    - "--directory=./koku"
-    - "--pattern=*.py"
-    - "--ignore-patterns=*test*"
-    - "--recursive"
-    - "--"
+    #- watchmedo
+    #- auto-restart
+    #- "--directory=./koku"
+    #- "--pattern=*.py"
+    #- "--ignore-patterns=*test*"
+    #- "--recursive"
+    #- "--"
     - python
     - koku/manage.py
     - sources
@@ -615,10 +642,10 @@ sourcesClient:
     POD_CPU_LIMIT: "1"
     GUNICORN_WORKERS: "3"
     GUNICORN_THREADS: "False"
-    UNLEASH_HOST: unleash
+    UNLEASH_HOST: koku-unleash-service
     UNLEASH_PREFIX: http
     UNLEASH_PORT: "4242"
-    UNLEASH_TOKEN: "" # Required
+    UNLEASH_TOKEN: "*:development.dbffffc83b1f92eeaf133a7eb878d4c58231acc159b5e1478ce53cfc" # Required
     ENHANCED_ORG_ADMIN: "True"
   ports:
     - containerPort: 4000
@@ -626,16 +653,24 @@ sourcesClient:
     - containerPort: 4001
       targetPort: 9000
   volumes:
-    - name: koku-code
-      mountPath: /koku/koku
-    - name: unleash-config
-      mountPath: /koku/.unleash
-    - name: db-functions
-      mountPath: /koku/db_functions
-    - name: scripts
-      mountPath: /koku/scripts
-    - name: credentials
-      mountPath: /etc/credentials
+    #- name: koku-code
+    #  mountPath: /koku/koku
+    #- name: unleash-config
+    #  mountPath: /koku/.unleash
+    #- name: db-functions
+    #  mountPath: /koku/db_functions
+    #- name: scripts
+    #  mountPath: /koku/scripts
+    - name: credentials-oci-key
+      mountPath: /etc/credentials/oci_key_file.pem
+      subPath: oci_key_file.pem
+      secret:
+        secretName: oci-config
+    - name: credentials-oci-config
+      mountPath: /etc/credentials/oci_config
+      subPath: oci_config
+      secret:
+        secretName: oci-config 
 
 kokuBeat:
   enabled: true
@@ -669,17 +704,27 @@ kokuBeat:
     UNLEASH_HOST: koku-unleash-service
     UNLEASH_PREFIX: http
     UNLEASH_PORT: "4242"
-    UNLEASH_TOKEN: "" # Required
+    UNLEASH_TOKEN: "*:development.dbffffc83b1f92eeaf133a7eb878d4c58231acc159b5e1478ce53cfc" # Required
     ENHANCED_ORG_ADMIN: "True"
   volumes:
-    - name: koku-code
-      mountPath: /koku/koku
-    - name: unleash-config
-      mountPath: /koku/.unleash
-    - name: db-functions
-      mountPath: /koku/db_functions
-    - name: scripts
-      mountPath: /koku/scripts
+    #- name: koku-code
+    #  mountPath: /koku/koku
+    #- name: unleash-config
+    #  mountPath: /koku/.unleash
+    #- name: db-functions
+    #  mountPath: /koku/db_functions
+    #- name: scripts
+    #  mountPath: /koku/scripts
+    - name: credentials-oci-key
+      mountPath: /etc/credentials/oci_key_file.pem
+      subPath: oci_key_file.pem
+      secret:
+        secretName: oci-config
+    - name: credentials-oci-config
+      mountPath: /etc/credentials/oci_config
+      subPath: oci_config
+      secret:
+        secretName: oci-config       
 
 postgres:
   enabled: true
@@ -748,7 +793,7 @@ postgres:
 pgadmin:
   enabled: true
   image: dpage/pgadmin4
-  tag: latest
+  tag: 9.3
   email: postgres@local.dev
   password: postgres
   port: 8432

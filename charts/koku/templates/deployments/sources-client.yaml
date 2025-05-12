@@ -24,13 +24,13 @@ spec:
         - name: {{ .name }}
         {{- end }}
       {{- end }}
-      restartPolicy: OnFailure # Corresponds to docker-compose's restart: on-failure
+      #restartPolicy: OnFailure # Only Always is accepted which is the default value
       containers:
         - name: sources-client
           image: {{ .Values.sourcesClient.image }}
           imagePullPolicy: {{ .Values.global.imagePullPolicy | default "IfNotPresent" }}
           workingDir: {{ .Values.sourcesClient.workingDir }}
-          entrypoint: {{ .Values.sourcesClient.entrypoint }}
+          command: {{ toJson .Values.sourcesClient.entrypoint }}
           ports:
             {{- range .Values.sourcesClient.ports }}
             - containerPort: {{ .containerPort }}
@@ -51,6 +51,15 @@ spec:
       volumes:
         {{- range .Values.sourcesClient.volumes }}
         - name: {{ .name }}
-          emptyDir: {} # You'll need to configure the actual volume source
+          {{- if .secret }}
+          secret:
+            secretName: {{ .secret.secretName }}
+          {{- else if .configMap }}
+          configMap:
+            name: {{ .configMap.name }}
+            defaultMode: {{ .configMap.defaultMode | default 420 }}
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
         {{- end }}
 {{- end }}        
