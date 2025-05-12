@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-run-server-config
+data:
+  run_server.sh: |
+{{ .Files.Get "files/run_server.sh" | indent 4 }}

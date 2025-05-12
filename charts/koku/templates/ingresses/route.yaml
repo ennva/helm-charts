@@ -1,0 +1,223 @@
+{{- if .Values.route.enabled -}}
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: koku-server-route
+spec:
+  host: {{ .Values.route.kokuServer.hostname }}
+  path: {{ .Values.route.kokuServer.path | default "/api/cost-management" }}
+  to:
+    kind: Service
+    name: {{ .Release.Name }}-koku-server-service
+    weight: 100
+  port:
+    targetPort: {{ .Values.kokuServer.servicePort | default 8000 }}
+  tls:
+    {{- if .Values.route.tls.enabled }}
+    termination: {{ .Values.route.tls.termination | default "edge" }}
+    {{- if eq .Values.route.tls.termination "passthrough" }}
+    insecureEdgeTerminationPolicy: Redirect
+    {{- else if eq .Values.route.tls.termination "reencrypt" }}
+    insecureEdgeTerminationPolicy: Redirect
+    {{- if .Values.route.tls.destinationCACertificate }}
+    destinationCACertificate: |
+      {{ .Values.route.tls.destinationCACertificate | nindent 6 }}
+    {{- end }}
+    {{- end }}
+    {{- if .Values.route.tls.certificate }}
+    certificate: |
+      {{ .Values.route.tls.certificate | nindent 4 }}
+    privateKey: |
+      {{ .Values.route.tls.privateKey | nindent 4 }}
+    {{- if .Values.route.tls.caCertificate }}
+    caCertificate: |
+      {{ .Values.route.tls.caCertificate | nindent 4 }}
+    {{- end }}
+    {{- end }}
+    {{- end }}
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: koku-server-admin-route
+spec:
+  host: {{ .Values.route.kokuServerAdmin.hostname }}
+  path: {{ .Values.route.kokuServerAdmin.path | default "/admin" }}
+  to:
+    kind: Service
+    name: {{ .Release.Name }}-koku-server-service
+    weight: 100
+  port:
+    targetPort: {{ .Values.kokuServer.adminPort | default 9000 }}
+  tls:
+    {{- if .Values.route.tls.enabled }}
+    termination: {{ .Values.route.tls.termination | default "edge" }}
+    {{- if eq .Values.route.tls.termination "passthrough" }}
+    insecureEdgeTerminationPolicy: Redirect
+    {{- else if eq .Values.route.tls.termination "reencrypt" }}
+    insecureEdgeTerminationPolicy: Redirect
+    {{- if .Values.route.tls.destinationCACertificate }}
+    destinationCACertificate: |
+      {{ .Values.route.tls.destinationCACertificate | nindent 6 }}
+    {{- end }}
+    {{- end }}
+    {{- if .Values.route.tls.certificate }}
+    certificate: |
+      {{ .Values.route.tls.certificate | nindent 4 }}
+    privateKey: |
+      {{ .Values.route.tls.privateKey | nindent 4 }}
+    {{- if .Values.route.tls.caCertificate }}
+    caCertificate: |
+      {{ .Values.route.tls.caCertificate | nindent 4 }}
+    {{- end }}
+    {{- end }}
+    {{- end }}
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: masu-server-route
+spec:
+  host: {{ .Values.route.masuServer.hostname }}
+  path: {{ .Values.route.masuServer.path | default "/api/cost-management" }}
+  to:
+    kind: Service
+    name: {{ .Release.Name }}-masu-server-service
+    weight: 100
+  port:
+    targetPort: {{ .Values.masuServer.servicePort | default 5042 }}
+  tls:
+    {{- if .Values.route.tls.enabled }}
+    termination: {{ .Values.route.tls.termination | default "edge" }}
+    {{- if eq .Values.route.tls.termination "passthrough" }}
+    insecureEdgeTerminationPolicy: Redirect
+    {{- else if eq .Values.route.tls.termination "reencrypt" }}
+    insecureEdgeTerminationPolicy: Redirect
+    {{- if .Values.route.tls.destinationCACertificate }}
+    destinationCACertificate: |
+      {{ .Values.route.tls.destinationCACertificate | nindent 6 }}
+    {{- end }}
+    {{- end }}
+    {{- if .Values.route.tls.certificate }}
+    certificate: |
+      {{ .Values.route.tls.certificate | nindent 4 }}
+    privateKey: |
+      {{ .Values.route.tls.privateKey | nindent 4 }}
+    {{- if .Values.route.tls.caCertificate }}
+    caCertificate: |
+      {{ .Values.route.tls.caCertificate | nindent 4 }}
+    {{- end }}
+    {{- end }}
+    {{- end }}
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: masu-server-admin-route
+spec:
+  host: {{ .Values.route.masuServerAdmin.hostname }}
+  path: {{ .Values.route.masuServerAdmin.path | default "/admin" }}
+  to:
+    kind: Service
+    name: {{ .Release.Name }}-masu-server-service
+    weight: 100
+  port:
+    targetPort: {{ .Values.masuServer.adminPort | default 5001 }}
+  tls:
+    {{- if .Values.route.tls.enabled }}
+    termination: {{ .Values.route.tls.termination | default "edge" }}
+    {{- if eq .Values.route.tls.termination "passthrough" }}
+    insecureEdgeTerminationPolicy: Redirect
+    {{- else if eq .Values.route.tls.termination "reencrypt" }}
+    insecureEdgeTerminationPolicy: Redirect
+    {{- if .Values.route.tls.destinationCACertificate }}
+    destinationCACertificate: |
+      {{ .Values.route.tls.destinationCACertificate | nindent 6 }}
+    {{- end }}
+    {{- end }}
+    {{- if .Values.route.tls.certificate }}
+    certificate: |
+      {{ .Values.route.tls.certificate | nindent 4 }}
+    privateKey: |
+      {{ .Values.route.tls.privateKey | nindent 4 }}
+    {{- if .Values.route.tls.caCertificate }}
+    caCertificate: |
+      {{ .Values.route.tls.caCertificate | nindent 4 }}
+    {{- end }}
+    {{- end }}
+    {{- end }}
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: sources-client-route
+spec:
+  host: {{ .Values.route.sourcesClient.hostname }}
+  path: {{ .Values.route.sourcesClient.path | default "/sources" }}
+  to:
+    kind: Service
+    name: {{ .Release.Name }}-sources-client-service
+    weight: 100
+  port:
+    targetPort: {{ .Values.sourcesClient.servicePort | default 4000 }}
+  tls:
+    {{- if .Values.route.tls.enabled }}
+    termination: {{ .Values.route.tls.termination | default "edge" }}
+    {{- if eq .Values.route.tls.termination "passthrough" }}
+    insecureEdgeTerminationPolicy: Redirect
+    {{- else if eq .Values.route.tls.termination "reencrypt" }}
+    insecureEdgeTerminationPolicy: Redirect
+    {{- if .Values.route.tls.destinationCACertificate }}
+    destinationCACertificate: |
+      {{ .Values.route.tls.destinationCACertificate | nindent 6 }}
+    {{- end }}
+    {{- end }}
+    {{- if .Values.route.tls.certificate }}
+    certificate: |
+      {{ .Values.route.tls.certificate | nindent 4 }}
+    privateKey: |
+      {{ .Values.route.tls.privateKey | nindent 4 }}
+    {{- if .Values.route.tls.caCertificate }}
+    caCertificate: |
+      {{ .Values.route.tls.caCertificate | nindent 4 }}
+    {{- end }}
+    {{- end }}
+    {{- end }}
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: sources-client-admin-route
+spec:
+  host: {{ .Values.route.sourcesClientAdmin.hostname }}
+  path: {{ .Values.route.sourcesClientAdmin.path | default "/sources-admin" }}
+  to:
+    kind: Service
+    name: {{ .Release.Name }}-sources-client-service
+    weight: 100
+  port:
+    targetPort: {{ .Values.sourcesClient.adminPort | default 4001 }}
+  tls:
+    {{- if .Values.route.tls.enabled }}
+    termination: {{ .Values.route.tls.termination | default "edge" }}
+    {{- if eq .Values.route.tls.termination "passthrough" }}
+    insecureEdgeTerminationPolicy: Redirect
+    {{- else if eq .Values.route.tls.termination "reencrypt" }}
+    insecureEdgeTerminationPolicy: Redirect
+    {{- if .Values.route.tls.destinationCACertificate }}
+    destinationCACertificate: |
+      {{ .Values.route.tls.destinationCACertificate | nindent 6 }}
+    {{- end }}
+    {{- end }}
+    {{- if .Values.route.tls.certificate }}
+    certificate: |
+      {{ .Values.route.tls.certificate | nindent 4 }}
+    privateKey: |
+      {{ .Values.route.tls.privateKey | nindent 4 }}
+    {{- if .Values.route.tls.caCertificate }}
+    caCertificate: |
+      {{ .Values.route.tls.caCertificate | nindent 4 }}
+    {{- end }}
+    {{- end }}
+    {{- end }}
+{{- end }}

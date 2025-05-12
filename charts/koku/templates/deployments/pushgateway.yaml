@@ -1,0 +1,28 @@
+{{- if .Values.pushgateway.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-pushgateway
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-pushgateway
+  replicas: {{ .Values.pushgateway.replicas | default 1 }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-pushgateway
+    spec:
+      {{- if .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- range .Values.global.imagePullSecrets }}
+        - name: {{ .name }}
+        {{- end }}
+      {{- end }}
+      containers:
+        - name: pushgateway
+          image: {{ .Values.pushgateway.image }}
+          imagePullPolicy: {{ .Values.global.imagePullPolicy | default "IfNotPresent" }}
+          ports:
+            - containerPort: {{ .Values.pushgateway.servicePort }}
+{{- end }}

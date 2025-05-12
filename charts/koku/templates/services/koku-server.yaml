@@ -1,0 +1,21 @@
+{{- if .Values.kokuServer.ports }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-koku-server-svc
+  labels:
+    app.kubernetes.io/name: koku-server
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  selector:
+    #app: {{ .Release.Name }}-koku-server
+    app.kubernetes.io/name: koku-server
+    app.kubernetes.io/instance: {{ .Release.Name }}
+  ports:
+    {{- range .Values.kokuServer.ports }}
+    - name: http-{{ .containerPort }}
+      protocol: TCP
+      port: {{ .containerPort }}
+      targetPort: {{ .targetPort }}
+    {{- end }}
+{{- end }}

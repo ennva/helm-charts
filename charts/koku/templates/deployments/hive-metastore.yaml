@@ -1,0 +1,63 @@
+{{- if .Values.hiveMetastore.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-hive-metastore
+  labels:
+    app.kubernetes.io/name: hive-metastore
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  replicas: 1 # You might want to make this configurable in values.yaml
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: hive-metastore
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: hive-metastore
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      initContainers:
+        - name: wait-for-db
+          image: busybox:latest
+          command: ['sh', '-c', 'until nc -z {{ .Values.hiveMetastore.environment.POSTGRES_SQL_SERVICE_HOST }} {{ .Values.hiveMetastore.environment.POSTGRES_SQL_SERVICE_PORT }}; do echo "Waiting for PostgreSQL..."; sleep 5; done; echo "PostgreSQL is ready"']
+        - name: wait-for-minio
+          image: busybox:latest
+          command: ['sh', '-c', 'until nc -z {{ .Values.hiveMetastore.environment.S3_ENDPOINT | regexReplaceAll "^http://|^https://" | regexReplaceAll ":[0-9]+$" "" }} {{ .Values.hiveMetastore.environment.S3_ENDPOINT | regexReplaceAll "^http://|^https://[^:]+:" "" | regexReplaceAll "/.*$" "" }}; do echo "Waiting for MinIO..."; sleep 5; done; echo "MinIO is ready"']
+        - name: wait-for-parquet-bucket
+          image: busybox:latest
+          command: ['sh', '-c', 'until kubectl get job {{ .Release.Name }}-create-parquet-bucket -n {{ .Release.Namespace }} -o jsonpath="{.status.succeeded}" | grep -q "1"; do echo "Waiting for create-parquet-bucket Job..."; sleep 10; done; echo "create-parquet-bucket Job succeeded"']
+      containers:
+        - name: hive-metastore
+          image: {{ .Values.hiveMetastore.image }}
+          ports:
+            - containerPort: {{ (index .Values.hiveMetastore.ports 0).containerPort }}
+          env:
+            {{- range $key, $value := .Values.hiveMetastore.environment }}
+            - name: {{ $key }}
+              value: {{ quote $value }}
+            {{- end }}
+          volumeMounts:
+            {{- range .Values.hiveMetastore.volumes }}
+            - name: {{ .name }}
+              mountPath: {{ .mountPath }}
+              {{- if .subPath }}
+              subPath: {{ .subPath }}
+              {{- end }}
+            {{- end }}
+          readinessProbe:
+            tcpSocket:
+              port: {{ (index .Values.hiveMetastore.ports 0).containerPort }}
+            initialDelaySeconds: 15
+            periodSeconds: 10
+      volumes:
+        {{- range .Values.hiveMetastore.volumes }}
+        - name: {{ .name }}
+          configMap:
+            name: {{ .Release.Name }}-hive-metastore-config # ConfigMap name
+            items:
+              - key: {{ .subPath }}
+                path: {{ .subPath }}
+        {{- end }}
+{{- end }}

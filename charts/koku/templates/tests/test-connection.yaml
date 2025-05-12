@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ include "koku.fullname" . }}-test-connection"
+  labels:
+    {{- include "koku.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test
+spec:
+  containers:
+    - name: wget
+      image: busybox
+      command: ['wget']
+      args: ['{{ include "koku.fullname" . }}:{{ (index .Values.kokuServer.ports 0).containerPort }}']
+  restartPolicy: Never

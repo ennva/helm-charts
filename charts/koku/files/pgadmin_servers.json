@@ -1,0 +1,15 @@
+{
+    "Servers": {
+      "1": {
+        "Name": "Local PostgreSQL",
+        "Group": "Servers",
+        "Host": "koku-postgres-service",
+        "Port": 5432,
+        "MaintenanceDB": "postgres",
+        "Username": "postgres",
+        "SSLMode": "prefer",
+        "PassFile": "/pgpass"
+      }
+    }
+  }
+  

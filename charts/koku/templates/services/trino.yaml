@@ -1,0 +1,24 @@
+{{- if .Values.trino.enabled -}}
+{{- $serviceName := "trino" -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-trino-svc
+  labels:
+    app.kubernetes.io/name: {{ $serviceName }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  type: {{ .Values.trino.service.type }}
+  selector: 
+    app.kubernetes.io/name: {{ $serviceName }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+  ports:
+    - name: http
+      port: {{ .Values.trino.service.ports.http }}
+      protocol: TCP
+      targetPort: 8080
+    - name: discovery
+      port: {{ .Values.trino.service.ports.discovery }}
+      protocol: TCP
+      targetPort: 10000
+{{- end }}
